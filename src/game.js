@@ -69,7 +69,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       box.animations.push(animationBox);
       scene.beginAnimation(box, 0, 100, true);
-    
+
       box.diffuse = BABYLON.Color3.Red();
 
       // Grass material

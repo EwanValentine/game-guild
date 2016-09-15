@@ -1,4 +1,9 @@
 window.addEventListener('DOMContentLoaded', () => {
+
+  const state = {
+    selected: null,
+    units: [],
+  }
   
   // get the canvas DOM element
   const canvas = document.getElementById('renderCanvas');
@@ -26,10 +31,46 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // create a built-in "sphere" shape; its constructor takes 5 params: name, width, depth, subdivisions, scene
       const box = BABYLON.Mesh.CreateBox('tank', 1.0, scene);
+      const boxMat = new BABYLON.StandardMaterial("ground", scene);
+      boxMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+      box.material = boxMat;
+
+      // Check collision
+      box.checkCollisions = true;
 
       // move the sphere upward 1/2 of its height
       box.position.y = 1;
       box.position.x = 0;
+
+      const animationBox = new BABYLON.Animation("myAnimation", "scaling.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+
+      // An array with all animation keys
+      const keys = []; 
+
+      //At the animation key 0, the value of scaling is "1"
+      keys.push({
+        frame: 0,
+        value: 1
+      });
+
+      //At the animation key 20, the value of scaling is "0.2"
+      keys.push({
+        frame: 20,
+        value: 0.2
+      });
+
+      //At the animation key 100, the value of scaling is "1"
+      keys.push({
+        frame: 100,
+        value: 1
+      });
+
+      animationBox.setKeys(keys);
+
+      box.animations.push(animationBox);
+      scene.beginAnimation(box, 0, 100, true);
+    
+      box.diffuse = BABYLON.Color3.Red();
 
       // Grass material
       const materialPlane = new BABYLON.StandardMaterial("texturePlane", scene);
@@ -51,6 +92,20 @@ window.addEventListener('DOMContentLoaded', () => {
   // call the createScene function
   const scene = createScene();
 
+  // Click event listener
+  window.addEventListener("click", e => {
+    const result = scene.pick(e.clientX, e.clientY)
+    console.log(result)
+
+    if (result.pickedMesh.id === "tank") {
+
+      alert("You clicked a tank!");
+
+      // Set this unit to selected
+      selectUnit(result.pickedMesh);
+    }
+  });
+
   // run the render loop
   engine.runRenderLoop(() => scene.render());
 
@@ -59,8 +114,21 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const unit = (name) => scene.getMeshByName(name);
 
-  const forwards = (unit, amount) => unit.position.x = amount;
+  const moveX = (unit, amount) => unit.position.x = amount;
+  const moveY = (unit, amount) => unit.position.y = amount;
+  const moveZ = (unit, amount) => unit.position.z = amount;
 
-  setTimeout(() => forwards(unit('tank'), 10), 5000);
+  const selectUnit = (unit) => {
+    state.selected = unit;
+  };
+
+  const createTank = () => {
+    const tank = BABYLON.Mesh.CreateBox('tank', 1.0, scene);
+    state.units.push(tank);
+  };
+
+  selectUnit(unit('tank'));
+
+  console.log(state);
 });
 

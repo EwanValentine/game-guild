@@ -31,7 +31,7 @@ window.addEventListener('DOMContentLoaded', () => {
       sphere.position.y = 1;
 
       // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
-      const ground = BABYLON.Mesh.CreateGround('ground1', 6, 6, 2, scene);
+      const ground = BABYLON.Mesh.CreateGround('ground1', 100, 100, 2, scene);
 
       // return the created scene
       return scene;

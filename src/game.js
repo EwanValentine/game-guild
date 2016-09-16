@@ -3,6 +3,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const state = {
     selected: null,
     units: [],
+    factories: [],
   }
   
   // get the canvas DOM element
@@ -17,6 +18,9 @@ window.addEventListener('DOMContentLoaded', () => {
       // create a basic BJS Scene object
       const scene = new BABYLON.Scene(engine);
 
+      // Enable physics engine
+      scene.enablePhysics(new BABYLON.Vector3(0,-10,0), new BABYLON.OimoJSPlugin());
+
       // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
       const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5,-10), scene);
 
@@ -30,10 +34,11 @@ window.addEventListener('DOMContentLoaded', () => {
       const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), scene);
 
       // create a built-in "sphere" shape; its constructor takes 5 params: name, width, depth, subdivisions, scene
-      const box = BABYLON.Mesh.CreateBox('tank', 1.0, scene);
+      const box = BABYLON.Mesh.CreateBox('tank', 0.5, scene);
       const boxMat = new BABYLON.StandardMaterial("ground", scene);
       boxMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
       box.material = boxMat;
+      box.type = "unit";
 
       // Check collision
       box.checkCollisions = true;
@@ -41,36 +46,6 @@ window.addEventListener('DOMContentLoaded', () => {
       // move the sphere upward 1/2 of its height
       box.position.y = 1;
       box.position.x = 0;
-
-      const animationBox = new BABYLON.Animation("myAnimation", "scaling.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-
-      // An array with all animation keys
-      const keys = []; 
-
-      //At the animation key 0, the value of scaling is "1"
-      keys.push({
-        frame: 0,
-        value: 1
-      });
-
-      //At the animation key 20, the value of scaling is "0.2"
-      keys.push({
-        frame: 20,
-        value: 0.2
-      });
-
-      //At the animation key 100, the value of scaling is "1"
-      keys.push({
-        frame: 100,
-        value: 1
-      });
-
-      animationBox.setKeys(keys);
-
-      box.animations.push(animationBox);
-      scene.beginAnimation(box, 0, 100, true);
-
-      box.diffuse = BABYLON.Color3.Red();
 
       // Grass material
       const materialPlane = new BABYLON.StandardMaterial("texturePlane", scene);
@@ -85,6 +60,8 @@ window.addEventListener('DOMContentLoaded', () => {
       plane.rotation.x = Math.PI / 2;
       plane.material = materialPlane;
 
+      plane.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, move:false});
+
       // return the created scene
       return scene;
   }
@@ -95,15 +72,16 @@ window.addEventListener('DOMContentLoaded', () => {
   // Click event listener
   window.addEventListener("click", e => {
     const result = scene.pick(e.clientX, e.clientY)
+
     console.log(result)
 
-    if (result.pickedMesh.id === "tank") {
-
-      alert("You clicked a tank!");
-
+    if (result.pickedMesh.type === "unit") {
+      
       // Set this unit to selected
       selectUnit(result.pickedMesh);
     }
+
+    moveTo(state.selected, scene.pointerX, scene.pointerY)
   });
 
   // run the render loop
@@ -113,6 +91,11 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', () => engine.resize());
 
   const unit = (name) => scene.getMeshByName(name);
+
+  const moveTo = (unit, x, y) => {
+    unit.position.x = x;
+    unit.position.y = y;
+  }
 
   const moveX = (unit, amount) => unit.position.x = amount;
   const moveY = (unit, amount) => unit.position.y = amount;

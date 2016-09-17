@@ -12,6 +12,7 @@ const state = {
 const speedCharacter = 8;
 const gravity = 0.15;
 let groundImpostor;
+const meshesColliderList = [];
 
 window.addEventListener('DOMContentLoaded', () => {
   
@@ -24,13 +25,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // createScene function that creates and return the scene
   const createScene = () => {
 
-      const meshesColliderList = [];
-
       // create a basic BJS Scene object
       const scene = new BABYLON.Scene(engine);
 
       // Enable physics engine
-      scene.enablePhysics();
+      scene.enablePhysics(new BABYLON.Vector3(0, -10, 0), new BABYLON.CannonJSPlugin());
 
       // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
       const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 100, 100), scene);
@@ -82,24 +81,6 @@ window.addEventListener('DOMContentLoaded', () => {
     box.material = boxMat;
     box.type = "unit";
 
-    const distanceJoint = new BABYLON.DistanceJoint({ maxDistance: 4 });
-
-    const boxImpostor = new BABYLON.PhysicsImpostor(box, BABYLON.PhysicsImpostor.BoxImpostor, {
-      mass: 1, restitution: 0, friction: 0.9, move: true,
-    }, scene);
-
-    box.physicsImpostor = boxImpostor;
-
-    // Detect collision
-    boxImpostor.registerOnPhysicsCollide(boxImpostor, (main, collided) => {
-      console.log('SHIT');
-      main.object.material.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
-    });
-
-    box.physicsImpostor.addJoint(box.physicsImpostor, distanceJoint);
-    
-    box.physicsImpostor.applyImpulse(new BABYLON.Vector3(1, 0, 0), box.getAbsolutePosition());
-
     box.position.y = 1;
   }
 
@@ -135,6 +116,16 @@ window.addEventListener('DOMContentLoaded', () => {
         );   
       });     
     }     
+  }
+
+  console.log(scene.meshes);
+
+  for (var i = 1; i < scene.meshes.length; i++) {
+    if (scene.meshes[i].checkCollisions && scene.meshes[i].isVisible === false) {
+        scene.meshes[i].setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
+                                        friction: 0.5, restitution: 0.7 });
+        meshesColliderList.push(scene.meshes[i]);
+    }
   }
 
   // run the render loop

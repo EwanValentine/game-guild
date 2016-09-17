@@ -11,6 +11,7 @@ const state = {
 
 const speedCharacter = 8;
 const gravity = 0.15;
+let groundImpostor;
 
 window.addEventListener('DOMContentLoaded', () => {
   
@@ -28,27 +29,16 @@ window.addEventListener('DOMContentLoaded', () => {
       // create a basic BJS Scene object
       const scene = new BABYLON.Scene(engine);
 
-      scene.collisionsEnabled = true;
-
       // Enable physics engine
-      scene.enablePhysics(new BABYLON.Vector3(0, -10, 0), new BABYLON.OimoJSPlugin());
+      scene.enablePhysics();
 
       // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
-      const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 10, -10), scene);
-      // camera.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+      const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 100, 100), scene);
       camera.setTarget(BABYLON.Vector3.Zero());
-      camera.attachControl(canvas, false);
-      // camera.applyGravity = true;
-      camera.checkCollisions = true;    
-
-      camera.onCollide = (mesh) => {
-        if (mesh.type === "unit") {
-          camera.position = new BABYLON.Vector3(0, -5, -20)
-        }
-      }
+      camera.attachControl(canvas, true);
 
       // create a basic light, aiming 0,1,0 - meaning, to the sky
-      const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), scene);
+      const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
 
       // Grass material
       const materialPlane = new BABYLON.StandardMaterial("texturePlane", scene);
@@ -58,13 +48,13 @@ window.addEventListener('DOMContentLoaded', () => {
       materialPlane.backFaceCulling = false; //Always show the front and the back of an element
 
       // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
-      const plane = BABYLON.Mesh.CreateGround('ground1', 120, 120, 2, scene);
+      const plane = BABYLON.Mesh.CreateGround('ground1', 500, 500, 2, scene);
       plane.material = materialPlane;
-      plane.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, move: false });
-      plane.checkCollisions = true;
+      plane.type = "ground";
 
-      plane.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, {mass:0, restitution:0.001});
-    
+      groundImpostor = new BABYLON.PhysicsImpostor(plane, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0, move: false }, scene);
+      plane.physicsImpostor = groundImpostor;
+      
       // return the created scene
       return scene;
   }
@@ -79,30 +69,42 @@ window.addEventListener('DOMContentLoaded', () => {
   const selectUnit = (unit) => {
     if (unit.type === "unit") {
       state.selected.unshift(unit);
+      unit.material.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
     }
   }
 
   // Create unit
-  const createUnit = (scene) => {
-    const box = BABYLON.Mesh.CreateBox('tank', 0.5, scene);
-    const boxMat = new BABYLON.StandardMaterial("ground", scene);
+  const createUnit = (scene, name) => {
+    
+    const box = BABYLON.Mesh.CreateBox(name, 2, scene);
+    const boxMat = new BABYLON.StandardMaterial(`ground-${name}`, scene);
     boxMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
     box.material = boxMat;
     box.type = "unit";
-    box.ellipsoid = new BABYLON.Vector3(0.5, 1.0, 0.5);
-    box.ellipsoidOffset = new BABYLON.Vector3(0, 1.0, 0);
-    box.checkCollisions = true;
-    
-    box.position.y = 0.5;
-    box.position.x = 0;
 
-    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { 
-      mass: 0, restitution: 0.5
+    const distanceJoint = new BABYLON.DistanceJoint({ maxDistance: 4 });
+
+    const boxImpostor = new BABYLON.PhysicsImpostor(box, BABYLON.PhysicsImpostor.BoxImpostor, {
+      mass: 1, restitution: 0, friction: 0.9, move: true,
+    }, scene);
+
+    box.physicsImpostor = boxImpostor;
+
+    // Detect collision
+    boxImpostor.registerOnPhysicsCollide(boxImpostor, (main, collided) => {
+      console.log('SHIT');
+      main.object.material.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
     });
+
+    box.physicsImpostor.addJoint(box.physicsImpostor, distanceJoint);
+    
+    box.physicsImpostor.applyImpulse(new BABYLON.Vector3(1, 0, 0), box.getAbsolutePosition());
+
+    box.position.y = 1;
   }
 
-  createUnit(scene);
-  createUnit(scene);
+  createUnit(scene, "test");
+  createUnit(scene, "test2");
 
   scene.onPointerDown = (evt, pickResult) => {
 

@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "babylonjs": "^2.4.1"
+    "babylonjs": "^2.4.1",
+    "cannon": "^0.6.2"
   }
 }

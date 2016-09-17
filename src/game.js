@@ -53,6 +53,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
       groundImpostor = new BABYLON.PhysicsImpostor(plane, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0, move: false }, scene);
       plane.physicsImpostor = groundImpostor;
+
+      for (let i = 1; i < scene.meshes.length; i++) {
+        if (scene.meshes[i].checkCollisions && scene.meshes[i].isVisible === false) {
+          scene.meshes[i].setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
+                                          friction: 0.5, restitution: 0.1 });
+          meshesColliderList.push(scene.meshes[i]);
+        }
+      }
       
       // return the created scene
       return scene;
@@ -80,6 +88,8 @@ window.addEventListener('DOMContentLoaded', () => {
     boxMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
     box.material = boxMat;
     box.type = "unit";
+    box.checkCollisions = true;
+    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1 });
 
     box.position.y = 1;
   }
@@ -120,17 +130,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
   console.log(scene.meshes);
 
-  for (var i = 1; i < scene.meshes.length; i++) {
-    if (scene.meshes[i].checkCollisions && scene.meshes[i].isVisible === false) {
-        scene.meshes[i].setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
-                                        friction: 0.5, restitution: 0.7 });
-        meshesColliderList.push(scene.meshes[i]);
-    }
-  }
-
   // run the render loop
   engine.runRenderLoop(() => scene.render());
 
   // the canvas/window resize event handler
   window.addEventListener('resize', () => engine.resize());
+
+  const addUnitButton = document.getElementById('build-unit');
+  addUnitButton.addEventListener('click', e => {
+    console.log(e);
+    createUnit(scene, "testing123");
+  });
 });

@@ -15,13 +15,27 @@
         padding: 0;
       }
 
+      .container {
+        display: flex;
+      }
+
       #renderCanvas {
-        width: 100%;
-        height: 100%;
+        width: 80vw;
+        height: 100vh;
+      }
+
+      .toolbox {
+        width: 20vw;
       }
     </style>
   </head>
   <body>
-    <canvas id="renderCanvas"></canvas>
+    <div class="container">
+      <canvas id="renderCanvas"></canvas>
+      <div class="toolbox">
+        <p>Stuff</p>
+        <button id="build-unit">Build unit</button>
+      </div>
+    </div>
   </body>
 </html>

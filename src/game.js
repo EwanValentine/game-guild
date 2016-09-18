@@ -35,7 +35,6 @@ window.addEventListener('DOMContentLoaded', () => {
       // Enable physics engine
       scene.enablePhysics(new BABYLON.Vector3(0, -10, 0), new BABYLON.CannonJSPlugin());
       scene.collisionsEnabled = true;
-      // .setGravity(new BABYLON.Vector3(0, -10, 0));
 
       // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
       const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 100, 100), scene);
@@ -64,12 +63,10 @@ window.addEventListener('DOMContentLoaded', () => {
       skybox.material = skyboxMaterial;
 
       // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
-      const plane = BABYLON.Mesh.CreateBox("ground", 500, scene);
+      const plane = BABYLON.Mesh.CreateGround("ground", 500, 500, 1000, scene);
       plane.type = "ground";
       plane.material = materialPlane;
-      plane.position.y = -10;
-      plane.scaling.y = 0.1;
-      plane.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, mass: 0, friction: 0.5, restitution: 0.7 });
+      plane.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, mass: 0, friction: 1, restitution: 0.7, move: false });
 
       for (let i = 1; i < scene.meshes.length; i++) {
         if (scene.meshes[i].checkCollisions && scene.meshes[i].isVisible === false) {
@@ -147,33 +144,41 @@ window.addEventListener('DOMContentLoaded', () => {
 
   scene.onPointerDown = (evt, pickResult) => {
 
-    const impact = pickResult.pickedMesh;
+    const unit = pickResult.pickedMesh;
     const position = pickResult.pickedPoint;
 
-    selectUnit(impact);
+    selectUnit(unit);
 
     if (pickResult.hit) {
 
       // For each selected unit
       state.selected.map(item => {
-
-        // Animate to picked location
-        BABYLON.Animation.CreateAndStartAnimation(
-          "anim", 
-          item, 
-          "position",
-          30, 
-          30, 
-
-          // Old position
-          item.position, 
-          
-          // New position
-          new BABYLON.Vector3(position.x, 1, position.z), 
-          0
-        );   
+        moveUnit(position, item);
       });     
     }     
+  }
+
+  const moveUnit = (position, item) => {
+    
+    if (position.x > 0) {
+      while (item.position.x < position.x) {
+        item.position.x += 0.001;
+      }
+    } else {
+      while (item.position.x > position.x) {
+        item.position.x -= 0.001;
+      } 
+    }
+
+    if (position.z > 0) {
+      while (item.position.z < position.z) {
+        item.position.z += 0.001;
+      }
+    } else {
+      while (item.position.z > position.z) {
+        item.position.z -= 0.001;
+      } 
+    }
   }
 
   // run the render loop
@@ -193,6 +198,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       buildBuilding(scene, "building123");
       increaseScore(20);
-    }, 2000);
+    }, 1000);
   });
 });

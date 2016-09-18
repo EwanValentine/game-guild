@@ -4,8 +4,6 @@
     <script src="./node_modules/cannon/build/cannon.js"></script>
     <script src="./node_modules/babylonjs/babylon.js"></script>
 
-    <script src="./src/game.js"></script>
-
     <style>
       html, body {
         overflow: hidden;
@@ -27,15 +25,22 @@
       .toolbox {
         width: 20vw;
       }
+
+      #score {
+      
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <canvas id="renderCanvas"></canvas>
       <div class="toolbox">
-        <p>Stuff</p>
+        <p>Score: <span id="score">0</span></p>
         <button id="build-unit">Build unit</button>
+        <button id="build-building">Build Processing Plant</button>
       </div>
     </div>
+
+    <script src="./src/game.js"></script>
   </body>
 </html>

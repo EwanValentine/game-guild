@@ -7,6 +7,7 @@ const state = {
   selectMode: POINTER,
   units: [],
   factories: [],
+  score: 0,
 }
 
 const speedCharacter = 8;
@@ -28,8 +29,13 @@ window.addEventListener('DOMContentLoaded', () => {
       // create a basic BJS Scene object
       const scene = new BABYLON.Scene(engine);
 
+      scene.ambientColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+      scene.clearColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+
       // Enable physics engine
       scene.enablePhysics(new BABYLON.Vector3(0, -10, 0), new BABYLON.CannonJSPlugin());
+      scene.collisionsEnabled = true;
+      // .setGravity(new BABYLON.Vector3(0, -10, 0));
 
       // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
       const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 100, 100), scene);
@@ -41,23 +47,34 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Grass material
       const materialPlane = new BABYLON.StandardMaterial("texturePlane", scene);
-      materialPlane.diffuseTexture = new BABYLON.Texture("./src/textures/grass.jpg", scene);
+      materialPlane.diffuseTexture = new BABYLON.Texture("./src/textures/sand.jpg", scene);
       materialPlane.diffuseTexture.uScale = 5.0; //Repeat 5 times on the Vertical Axes
       materialPlane.diffuseTexture.vScale = 5.0; //Repeat 5 times on the Horizontal Axes
       materialPlane.backFaceCulling = false; //Always show the front and the back of an element
 
-      // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
-      const plane = BABYLON.Mesh.CreateGround('ground1', 500, 500, 2, scene);
-      plane.material = materialPlane;
-      plane.type = "ground";
+      // Skybox
+      const skybox = BABYLON.Mesh.CreateBox("skyBox", 500.0, scene);
+      const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+      skyboxMaterial.backFaceCulling = false;
+      skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("./src/textures/nebula", scene);
+      skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+      skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+      skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+      skyboxMaterial.disableLighting = true;
+      skybox.material = skyboxMaterial;
 
-      groundImpostor = new BABYLON.PhysicsImpostor(plane, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0, move: false }, scene);
-      plane.physicsImpostor = groundImpostor;
+      // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
+      const plane = BABYLON.Mesh.CreateBox("ground", 500, scene);
+      plane.type = "ground";
+      plane.material = materialPlane;
+      plane.position.y = -10;
+      plane.scaling.y = 0.1;
+      plane.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, mass: 0, friction: 0.5, restitution: 0.7 });
 
       for (let i = 1; i < scene.meshes.length; i++) {
         if (scene.meshes[i].checkCollisions && scene.meshes[i].isVisible === false) {
           scene.meshes[i].setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
-                                          friction: 0.5, restitution: 0.1 });
+                                          friction: 1, restitution: 0.1 });
           meshesColliderList.push(scene.meshes[i]);
         }
       }
@@ -75,27 +92,58 @@ window.addEventListener('DOMContentLoaded', () => {
   // Select a unit
   const selectUnit = (unit) => {
     if (unit.type === "unit") {
-      state.selected.unshift(unit);
-      unit.material.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
+      if (state.score > state.selected.length * 2) {
+        state.selected.unshift(unit);
+        unit.material.diffuseColor = new BABYLON.Color4(0, 0, 0.9, 0.1);
+      }
     }
   }
 
+  const increaseScore = (amount) => {
+    state.score = state.score + amount;
+    document.getElementById('score').textContent = state.score;
+  }
+
+  const getRandomInt = (min, max) => {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min;
+  }
+
   // Create unit
-  const createUnit = (scene, name) => {
-    
-    const box = BABYLON.Mesh.CreateBox(name, 2, scene);
+  const createUnit = (scene, name, size = 2, y = 1) => {
+
+    const box = BABYLON.Mesh.CreateBox(name, size, scene);
     const boxMat = new BABYLON.StandardMaterial(`ground-${name}`, scene);
     boxMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
     box.material = boxMat;
     box.type = "unit";
     box.checkCollisions = true;
     box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1 });
-
-    box.position.y = 1;
+    box.applyGravity = true;    
+    box.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+    box.position.y = getRandomInt(1, 100);
+    box.position.z = getRandomInt(1, 100);
   }
 
-  createUnit(scene, "test");
-  createUnit(scene, "test2");
+  // Start
+  for (let i = 1; i < 100; i++) {
+    createUnit(scene, "start");
+  }
+
+  const buildBuilding = (scene, name) => {
+    const box = BABYLON.Mesh.CreateBox(name, 6, scene);
+    const boxMat = new BABYLON.StandardMaterial(`ground-${name}`, scene);
+
+    boxMat.diffuseColor = new BABYLON.Color3(1, 0.1, 0.1); 
+    box.material = boxMat;
+    box.type = "building";
+    box.checkCollisions = true;
+    box.applyGravity = true;
+    box.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+    box.position.y = 3;
+    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false });
+  }
 
   scene.onPointerDown = (evt, pickResult) => {
 
@@ -128,8 +176,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }     
   }
 
-  console.log(scene.meshes);
-
   // run the render loop
   engine.runRenderLoop(() => scene.render());
 
@@ -139,6 +185,14 @@ window.addEventListener('DOMContentLoaded', () => {
   const addUnitButton = document.getElementById('build-unit');
   addUnitButton.addEventListener('click', e => {
     console.log(e);
-    createUnit(scene, "testing123");
+    setTimeout(() => createUnit(scene, "testing123"), 1000);
+  });
+
+  const addBuildingButton = document.getElementById('build-building');
+  addBuildingButton.addEventListener('click', e => {
+    setTimeout(() => {
+      buildBuilding(scene, "building123");
+      increaseScore(20);
+    }, 2000);
   });
 });

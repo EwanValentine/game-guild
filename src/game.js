@@ -175,6 +175,10 @@ window.addEventListener('DOMContentLoaded', () => {
     }     
   }
 
+  // Animate unit easing
+  const easing = new BABYLON.ExponentialEase();
+	easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+
   const moveUnit = (position, item) => {
     currentAnimation = BABYLON.Animation.CreateAndStartAnimation(
       "anim",
@@ -184,7 +188,8 @@ window.addEventListener('DOMContentLoaded', () => {
       120,
       item.position,
       position,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+      easing
     )
   }
 

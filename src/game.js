@@ -116,11 +116,17 @@ window.addEventListener('DOMContentLoaded', () => {
     box.material = boxMat;
     box.type = "unit";
     box.checkCollisions = true;
-    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1 });
-    box.applyGravity = true;    
-    box.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, restitution: 0.1, friction: 1.5 });
+    box.applyGravity = true; 
+    box.ellipsoid = new BABYLON.Vector3(size, size, size);
+    
     box.position.y = getRandomInt(1, 100);
     box.position.z = getRandomInt(1, 100);
+
+    const col = new BABYLON.Vector3(box.position.x - 10, box.position.y - 10, box.position.z - 10);
+    box.moveWithCollisions(col);
+    
+    meshesColliderList.push(box);
   }
 
   // Start
@@ -137,10 +143,14 @@ window.addEventListener('DOMContentLoaded', () => {
     box.type = "building";
     box.checkCollisions = true;
     box.applyGravity = true;
-    box.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+    box.ellipsoid = new BABYLON.Vector3(6, 6, 6);
     box.position.y = 3;
-    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false });
+    // box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false, restitution: 0.1, friction: 1.5 });
+
+    meshesColliderList.push(box);
   }
+
+  let currentAnimation = null;
 
   scene.onPointerDown = (evt, pickResult) => {
 
@@ -151,6 +161,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (pickResult.hit) {
 
+      const pickedPosition = position.clone();
+      pickedPosition.y = 1;
+
+      if (currentAnimation) {
+        currentAnimation.stop();
+      }
+
       // For each selected unit
       state.selected.map(item => {
         moveUnit(position, item);
@@ -159,26 +176,16 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   const moveUnit = (position, item) => {
-    
-    if (position.x > 0) {
-      while (item.position.x < position.x) {
-        item.position.x += 0.001;
-      }
-    } else {
-      while (item.position.x > position.x) {
-        item.position.x -= 0.001;
-      } 
-    }
-
-    if (position.z > 0) {
-      while (item.position.z < position.z) {
-        item.position.z += 0.001;
-      }
-    } else {
-      while (item.position.z > position.z) {
-        item.position.z -= 0.001;
-      } 
-    }
+    currentAnimation = BABYLON.Animation.CreateAndStartAnimation(
+      "anim",
+      item,
+      "position",
+      60, 
+      120,
+      item.position,
+      position,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    )
   }
 
   // run the render loop

@@ -179,14 +179,16 @@ window.addEventListener('DOMContentLoaded', () => {
   const easing = new BABYLON.ExponentialEase();
 	easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
 
-  const moveUnit = (position, item) => {
+  const moveUnit = (position, unit) => {
+
+    // Physics is ignored using this method :'( 
     currentAnimation = BABYLON.Animation.CreateAndStartAnimation(
       "anim",
-      item,
+      unit,
       "position",
       60, 
       120,
-      item.position,
+      unit.position,
       position,
       BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
       easing

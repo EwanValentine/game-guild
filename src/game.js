@@ -42,6 +42,24 @@ const largePowerPlant = {
   power: 40,
 }
 
+// warFactory
+const warFactory = {
+	size: 8,
+	powerConsumption: 10,
+}
+
+// radar
+const radar = {
+	size: 4,
+	powerConsumption: 50,
+}
+
+// constructionYard
+const constructionYard = {
+	size: 10,
+	powerConsumption: 0,
+}
+
 // Units
 const lightTank = {
 	size: 4,
@@ -55,43 +73,53 @@ const jeep = {
 	shield: 2,
 }
 
+// On DOM load
 window.addEventListener('DOMContentLoaded', () => {
 
+	// Select canvas
   const canvas = document.getElementById('renderCanvas');
 
+	// Game engine instance
   const engine = new BABYLON.Engine(canvas, true);
+
+	const initScene = () => {
+	
+		// This creates a basic Babylon Scene object (non-mesh)
+		const scene = new BABYLON.Scene(engine);
+		scene.enablePhysics();
+
+		// This creates and positions a free camera (non-mesh)
+		const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 120, 100), scene);
+
+		// This targets the camera to scene origin
+		camera.setTarget(BABYLON.Vector3.Zero());
+
+		// This attaches the camera to the canvas
+		camera.attachControl(canvas, true);
+
+		// This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+		const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+
+		// Default intensity is 1. Let's dim the light a small amount
+		light.intensity = 0.7;
+
+		// Sky
+		const skybox = BABYLON.Mesh.CreateBox("skyBox", 500.0, scene);
+		const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+		skyboxMaterial.backFaceCulling = false;
+		skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("./src/textures/nebula", scene);
+		skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+		skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+		skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+		skyboxMaterial.disableLighting = true;
+		skybox.material = skyboxMaterial;
+
+	  return scene;
+	}
 
   const createScene = () => {
 
-      // This creates a basic Babylon Scene object (non-mesh)
-      const scene = new BABYLON.Scene(engine);
-      scene.enablePhysics();
-
-      // This creates and positions a free camera (non-mesh)
-      const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 120, 100), scene);
-
-      // This targets the camera to scene origin
-      camera.setTarget(BABYLON.Vector3.Zero());
-
-      // This attaches the camera to the canvas
-      camera.attachControl(canvas, true);
-
-      // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-      const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
-
-      // Default intensity is 1. Let's dim the light a small amount
-      light.intensity = 0.7;
-
-      // Sky
-      const skybox = BABYLON.Mesh.CreateBox("skyBox", 500.0, scene);
-      const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
-      skyboxMaterial.backFaceCulling = false;
-      skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("./src/textures/nebula", scene);
-      skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-      skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
-      skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-      skyboxMaterial.disableLighting = true;
-      skybox.material = skyboxMaterial;
+			const scene = initScene();
 
       const boxMat = new BABYLON.StandardMaterial("groundMat", scene);
       boxMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
@@ -232,11 +260,9 @@ window.addEventListener('DOMContentLoaded', () => {
           buildBuilding("barracks", barracks, state.targetPoint); 
         }, 5000 / power);
       }
-
+			
 			document.getElementById("buildLightTank").onclick = () => {
 				setTimeout(() => {
-
-					// Name, type, scene, boxMat
 					createUnit("light-tank", lightTank, scene, boxMat);
 				}, 4000 / power);
 			}
@@ -245,6 +271,18 @@ window.addEventListener('DOMContentLoaded', () => {
 				setTimeout(() => {
 					createUnit("jeep", jeep, scene, boxMat);
 				}, 1000 / power);
+			}
+
+			document.getElementById("buildWarFactory").onclick = () => {
+				setTimeout(() => {
+					createUnit("war-factory", warFactory, scene, boxMat);
+				}, 8000 / power);
+			}
+
+			document.getElementById("buildRadar").onclick = () => {
+				setTimeout(() => {
+					createUnit("radar", radar, scene, boxMat);
+				}, 10000 / power);	
 			}
       
 			// Before scene is rendered
@@ -295,8 +333,6 @@ window.addEventListener('DOMContentLoaded', () => {
        */
       const facePoint = (rotatingObject, pointToRotateTo) => {
 
-				console.log(pointToRotateTo);
-        
         // a directional vector from one object to the other one
         // Error here
         const direction = pointToRotateTo.subtract(rotatingObject.position);

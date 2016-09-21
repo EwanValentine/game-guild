@@ -1,3 +1,12 @@
+/**
+ * Some game
+ *
+ * This is some generic RTS game at the moment.
+ *
+ * @author    Ewan Valentine <ewan.valentine89@gmail.com>
+ * @copyright Ewan Valentine 2016
+ */
+
 const meshesColliderList = [];
 
 const buildings = [];
@@ -15,6 +24,8 @@ const power = (buildings.length > 0)
              .reduce((prev, plant) => prev + plant) : 0;
 
 // Buildings
+
+// Barracks
 const barracks = {
   size: BABYLON.Vector3(3, 3, 3),
 }
@@ -29,6 +40,19 @@ const powerPlant = {
 const largePowerPlant = {
   size: BABYLON.Vector3(10, 10, 10),
   power: 40,
+}
+
+// Units
+const lightTank = {
+	size: 4,
+	attack: 50,
+	shield: 20,
+}
+
+const jeep = {
+	size: 2,
+	attack: 10,
+	shield: 2,
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -72,6 +96,14 @@ window.addEventListener('DOMContentLoaded', () => {
       const boxMat = new BABYLON.StandardMaterial("groundMat", scene);
       boxMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
       
+			/**
+			 * getRandomInt
+			 *
+			 * @param {Integer} min
+			 * @param {Integer} max
+			 *
+			 * @return {Integer}
+			 */
       const getRandomInt = (min, max) => { 
         min = Math.ceil(min);
         max = Math.floor(max);
@@ -90,8 +122,6 @@ window.addEventListener('DOMContentLoaded', () => {
       plane.type = "ground";
       plane.material = materialPlane;
       plane.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, mass: 0, friction: 1, restitution: 0.7, move: false });
-
-      let targetPoint = state.targetPoint;
 
       const gridSize = 3;
       const marker = BABYLON.MeshBuilder.CreateSphere('marker', { size: gridSize, height: 1 }, scene);
@@ -124,6 +154,9 @@ window.addEventListener('DOMContentLoaded', () => {
         building.checkCollisions = true;
         building.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false });
       }
+
+      const selectedMaterial = new BABYLON.StandardMaterial("groundMat", scene);
+      selectedMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.7, 0.4);
       
       /**
        * selectUnit
@@ -131,15 +164,26 @@ window.addEventListener('DOMContentLoaded', () => {
        * @param {Mesh} mesh
        */
       const selectUnit = mesh => { 
-        if (mesh.type === "unit") {
+
+				// If mesh type is unit, and mesh is not already selected
+        if (mesh.type === "unit" && mesh.selected === false) {
+					mesh.selected = true;
+					mesh.material = selectedMaterial;
           state.selected.unshift(mesh);
-        }
+        } else if (mesh.selected === true) {
+					mesh.selected = false;
+					mesh.material = boxMat;
+					state.selected = state.selected.filter(unit => unit.id !== mesh.id)
+				}
+
+				return false;
       }
     
       // When click event is raised
       let clientX = 0;
       let clientY = 0;
 
+			// On mousedown
       window.addEventListener("mousedown", function (e) {
         if (e.target.id === 'renderCanvas') {
           clientX = e.clientX;
@@ -147,6 +191,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       });
       
+			// On mouseup
       window.addEventListener("mouseup", function (e) {
 
         if (e.target.id == 'renderCanvas'
@@ -156,8 +201,9 @@ window.addEventListener('DOMContentLoaded', () => {
           // We try to pick an object
           const pickResult = scene.pick(scene.pointerX, scene.pointerY);
 
+					// If valid pickpoint
           if (pickResult.pickedPoint) {
-            targetPoint = pickResult.pickedPoint;
+            state.targetPoint = pickResult.pickedPoint;
             selectUnit(pickResult.pickedMesh);
           }	
         }
@@ -171,6 +217,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 8000 / power);
       }
 
+			// Build large power plant button
       document.getElementById("buildLargePowerPlant").onclick = () => {
         console.log("Building large power plant...");
         setTimeout(() => {
@@ -178,25 +225,41 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 12000 / power);
       }
 
+			// Build barracks 
       document.getElementById("buildBarracks").onclick = () => {
         console.log('Building barracks...');
         setTimeout(() => {
           buildBuilding("barracks", barracks, state.targetPoint); 
         }, 5000 / power);
       }
+
+			document.getElementById("buildLightTank").onclick = () => {
+				setTimeout(() => {
+
+					// Name, type, scene, boxMat
+					createUnit("light-tank", lightTank, scene, boxMat);
+				}, 4000 / power);
+			}
+
+			document.getElementById("buildJeep").onclick = () => {
+				setTimeout(() => {
+					createUnit("jeep", jeep, scene, boxMat);
+				}, 1000 / power);
+			}
       
+			// Before scene is rendered
       scene.registerBeforeRender(() => {
 
         // If target point is set
-        if (targetPoint) {
+        if (state.targetPoint) {
 
           // Foreach selected unit
           state.selected.map(box => {
 
-            if (!facePoint(box, targetPoint)) {
+            if (!facePoint(box, state.targetPoint)) {
 
               // Move unit to target point
-              moveUnit(box, targetPoint);
+              moveUnit(box, state.targetPoint);
             }
           });
         }
@@ -206,23 +269,22 @@ window.addEventListener('DOMContentLoaded', () => {
        * createUnit
        *
        * @param {String}   name
+			 * @param {Object}   type
        * @param {Scene}    scene
        * @param {Material} material
        */
-      const createUnit = (name, scene, boxMat) => { 
+      const createUnit = (name, type, scene, boxMat) => { 
 
-        const box = BABYLON.Mesh.CreateBox(name, 2, scene);
+        const box = BABYLON.Mesh.CreateBox(name, type.size, scene);
         box.material = boxMat;
         box.type = "unit";	
         box.position.x = getRandomInt(1, 100);
         box.position.z = getRandomInt(1, 100);
-        box.position.y = 1;
+        box.position.y = type.size / 2;
+				box.selected = false;
         box.checkCollisions = true;
       }
       
-      createUnit("test", scene, boxMat);
-      createUnit("test2", scene, boxMat);
-    
       /**
        * facePoint
        *
@@ -232,6 +294,8 @@ window.addEventListener('DOMContentLoaded', () => {
        * @return {bool}
        */
       const facePoint = (rotatingObject, pointToRotateTo) => {
+
+				console.log(pointToRotateTo);
         
         // a directional vector from one object to the other one
         // Error here
@@ -304,22 +368,22 @@ window.addEventListener('DOMContentLoaded', () => {
         // Should be on the floor
         pointToMoveTo.y = 1;
 
+				// Create move vector
         let moveVector = pointToMoveTo.subtract(objectToMove.position);
         
+				// Set marker point to picked position
         marker.position.x = Math.round(pointToMoveTo.x / gridSize) * gridSize;
         marker.position.y = Math.round(pointToMoveTo.y / gridSize) * gridSize;
         marker.position.z = Math.round(pointToMoveTo.z / gridSize) * gridSize;
 
+				// If distance is greater than 0.2
         if (moveVector.length() > 0.2) {
 
           moveVector = moveVector.normalize();
           moveVector = moveVector.scale(0.2);
           objectToMove.moveWithCollisions(moveVector);
-
-        } else {
-          targetPoint = null;
-        } 
-      }
+        }       
+			}
 
       return scene;
   }

@@ -27,18 +27,18 @@ const power = (buildings.length > 0)
 
 // Barracks
 const barracks = {
-  size: BABYLON.Vector3(3, 3, 3),
+  size: 3,
 }
 
 // Power Plant
 const powerPlant = {
-  size: BABYLON.Vector3(5, 5, 5),
+  size: 5,
   power: 10,
 }
 
 // Large Power Plant
 const largePowerPlant = {
-  size: BABYLON.Vector3(10, 10, 10),
+  size: 10,
   power: 40,
 }
 
@@ -144,9 +144,9 @@ window.addEventListener('DOMContentLoaded', () => {
        */
       const buildBuilding = (name, type, position) => {
 
-        const building = BABYLON.Mesh.CreateBox(name, position.y, scene);
+        const building = BABYLON.Mesh.CreateBox(name, type.size, scene);
 
-        building.position.y = position.y / 2;
+        building.position.y = type.size / 2;
         building.position.z = position.z;
         building.position.x = position.x;
 
@@ -213,7 +213,7 @@ window.addEventListener('DOMContentLoaded', () => {
       document.getElementById("buildPowerPlant").onclick = () => {
         console.log('Building power plant...');
         setTimeout(() => {
-          buildBuilding("power-plant", powerStation, state.targetPoint);
+          buildBuilding("power-plant", powerPlant, state.targetPoint);
         }, 8000 / power);
       }
 

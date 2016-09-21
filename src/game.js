@@ -73,6 +73,18 @@ const jeep = {
 	shield: 2,
 }
 
+const grenadier = {
+	size: 1,
+	attack: 3,
+	shield: 0.2,
+}
+
+const infantry = {
+	size: 1,
+	attack: 0.5,
+	shield: 0.1,
+}
+
 // On DOM load
 window.addEventListener('DOMContentLoaded', () => {
 
@@ -162,6 +174,13 @@ window.addEventListener('DOMContentLoaded', () => {
           meshesColliderList.push(scene.meshes[i]);
         }
       }
+
+			// Concrete texture
+			const buildingMaterial = new BABYLON.StandardMaterial("textureBuilding", scene);
+			buildingMaterial.diffuseTexture = new BABYLON.Texture("./src/textures/concrete.jpg", scene);
+			buildingMaterial.diffuseTexture.uScale = 5.0;
+			buildingMaterial.diffuseTexture.vScale = 5.0;
+			buildingMaterial.backFaceCulling = false;
       
       /**
        * buildBuilding
@@ -180,6 +199,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         building.type = "building";
         building.checkCollisions = true;
+				building.material = buildingMaterial;
         building.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false });
       }
 

@@ -108,8 +108,6 @@ window.addEventListener('DOMContentLoaded', () => {
               const unit = pickResult.pickedMesh;
 
               selectUnit(unit);
-
-              console.log(state.selected);
             }
           }
         } 

@@ -5,7 +5,6 @@ const SELECT_UNITS = "SELECT_UNITS";
 const state = {
   selected: [],
   selectMode: POINTER,
-  units: [],
   factories: [],
   score: 0,
 }
@@ -68,14 +67,148 @@ window.addEventListener('DOMContentLoaded', () => {
       plane.material = materialPlane;
       plane.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, mass: 0, friction: 1, restitution: 0.7, move: false });
 
-      for (let i = 1; i < scene.meshes.length; i++) {
-        if (scene.meshes[i].checkCollisions && scene.meshes[i].isVisible === false) {
-          scene.meshes[i].setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
-                                          friction: 1, restitution: 0.1 });
-          meshesColliderList.push(scene.meshes[i]);
+      let targetPoint = null;
+      const gridSize = 1;
+      const marker = BABYLON.MeshBuilder.CreateBox("marker", { size: gridSize, height: 0.1 }, scene);
+
+      for (var i = 1; i < scene.meshes.length; i++) {
+          if (scene.meshes[i].checkCollisions && scene.meshes[i].isVisible === false) {
+            scene.meshes[i].setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
+                                            friction: 1, restitution: 0.1 });
+            meshesColliderList.push(scene.meshes[i]);
+          }
+      }
+
+      let clientX = 0;
+      let clientY = 0;
+
+      window.addEventListener("mousedown", e => {
+        
+        if (e.target.id == 'renderCanvas') {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        }
+      });
+
+      window.addEventListener("mouseup", e => {
+
+        if (e.target.id == 'renderCanvas'
+          && Math.abs(clientX - e.clientX) < 10
+          && Math.abs(clientY - e.clientY) < 10) {
+          
+          // We try to pick an object
+          const pickResult = scene.pick(scene.pointerX, scene.pointerY);
+
+          if (pickResult.pickedPoint) {
+
+            targetPoint = pickResult.pickedPoint;
+
+            if (pickResult.hit) {
+
+              const unit = pickResult.pickedMesh;
+
+              selectUnit(unit);
+
+              console.log(state.selected);
+            }
+          }
+        } 
+      });
+
+      scene.registerBeforeRender(() => {
+
+        if (targetPoint) {
+          
+          // Foreach selected unit
+          state.selected.map(unit => {
+
+            // If
+            if (!facePoint(unit, targetPoint)) {
+
+              // Move unit
+              moveUnit(unit, targetPoint);
+            }
+          });
+        }
+      });
+
+      const facePoint = (rotatingObject, pointToRotateTo) => {
+      
+        // a directional vector from one object to the other one
+        const direction = pointToRotateTo.subtract(rotatingObject.position);
+        
+        const v1 = new BABYLON.Vector3(0,0,1);
+        const v2 = direction;
+        
+        // caluculate the angel for the new direction
+        let angle = Math.acos(BABYLON.Vector3.Dot(v1, v2.normalize()));
+        
+        //console.log(angle);
+        
+        // decide it the angle has to be positive or negative
+        if (direction.x < 0) angle = angle * -1;
+        
+        // calculate both angles in degrees
+        let angleDegrees = Math.round(angle * 180/Math.PI);
+        let playerRotationDegress = Math.round(rotatingObject.rotation.y * 180/Math.PI);
+        
+        // calculate the delta
+        let deltaDegrees = playerRotationDegress - angleDegrees;
+        
+        // check what direction to turn to take the shotest turn
+        if (deltaDegrees > 180) {
+          deltaDegrees = deltaDegrees - 360;
+        } else if(deltaDegrees < -180){
+          deltaDegrees = deltaDegrees + 360;
+        }
+        
+        // rotate until the difference between the object angle and the target angle is no more than 3 degrees
+        if (Math.abs(deltaDegrees) > 3) {
+
+          const rotationSpeed = Math.round(Math.abs(deltaDegrees) / 8);
+          
+          if (deltaDegrees > 0) {
+            rotatingObject.rotation.y -= rotationSpeed * Math.PI / 180;
+            if (rotatingObject.rotation.y < -Math.PI) {
+              rotatingObject.rotation.y = Math.PI;
+            }
+          }
+          if (deltaDegrees < 0) {
+            rotatingObject.rotation.y += rotationSpeed * Math.PI / 180;
+            if (rotatingObject.rotation.y > Math.PI) {
+              rotatingObject.rotation.y = -Math.PI;
+            }
+          }
+          
+          // return true since the rotation is in progress
+          return true;
+          
+        } else {
+        
+          // return false since no rotation needed to be done
+          return false;
         }
       }
-      
+
+      const moveUnit = (objectToMove, pointToMoveTo) => {
+
+        pointToMoveTo.y = 1;
+
+        let moveVector = pointToMoveTo.subtract(objectToMove.position);
+
+        marker.position.x = Math.round(objectToMove.position.x/gridSize)*gridSize;
+        marker.position.y = Math.round(objectToMove.position.y/gridSize)*gridSize;
+        marker.position.z = Math.round(objectToMove.position.z/gridSize)*gridSize;
+
+        if (moveVector.length() > 0.2) {
+          moveVector = moveVector.normalize();
+          moveVector = moveVector.scale(0.2);
+          objectToMove.moveWithCollisions(moveVector);
+        } else {
+          targetPoint = null;
+        }
+      };
+        
       // return the created scene
       return scene;
   }
@@ -116,16 +249,13 @@ window.addEventListener('DOMContentLoaded', () => {
     box.material = boxMat;
     box.type = "unit";
     box.checkCollisions = true;
-    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, restitution: 0.1, friction: 1.5 });
-    box.applyGravity = true; 
-    box.ellipsoid = new BABYLON.Vector3(size, size, size);
+    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
+                                          friction: 1, restitution: 0.1 });
     
     box.position.y = getRandomInt(1, 100);
     box.position.z = getRandomInt(1, 100);
 
     const col = new BABYLON.Vector3(box.position.x - 10, box.position.y - 10, box.position.z - 10);
-    box.moveWithCollisions(col);
-    
     meshesColliderList.push(box);
   }
 
@@ -135,6 +265,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   const buildBuilding = (scene, name) => {
+
     const box = BABYLON.Mesh.CreateBox(name, 6, scene);
     const boxMat = new BABYLON.StandardMaterial(`ground-${name}`, scene);
 
@@ -142,58 +273,32 @@ window.addEventListener('DOMContentLoaded', () => {
     box.material = boxMat;
     box.type = "building";
     box.checkCollisions = true;
-    box.applyGravity = true;
-    box.ellipsoid = new BABYLON.Vector3(6, 6, 6);
     box.position.y = 3;
-    // box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false, restitution: 0.1, friction: 1.5 });
+    box.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false });
 
     meshesColliderList.push(box);
   }
 
   let currentAnimation = null;
 
+  // On pointer down
+  /**
   scene.onPointerDown = (evt, pickResult) => {
+
+    console.log('test 2')
 
     const unit = pickResult.pickedMesh;
     const position = pickResult.pickedPoint;
 
-    selectUnit(unit);
-
     if (pickResult.hit) {
-
-      const pickedPosition = position.clone();
-      pickedPosition.y = 1;
-
-      if (currentAnimation) {
-        currentAnimation.stop();
-      }
-
-      // For each selected unit
-      state.selected.map(item => {
-        moveUnit(position, item);
-      });     
+      selectUnit(unit);
     }     
   }
+  */
 
   // Animate unit easing
   const easing = new BABYLON.ExponentialEase();
 	easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-
-  const moveUnit = (position, unit) => {
-
-    // Physics is ignored using this method :'( 
-    currentAnimation = BABYLON.Animation.CreateAndStartAnimation(
-      "anim",
-      unit,
-      "position",
-      60, 
-      120,
-      unit.position,
-      position,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
-      easing
-    )
-  }
 
   // run the render loop
   engine.runRenderLoop(() => scene.render());
@@ -202,8 +307,8 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', () => engine.resize());
 
   const addUnitButton = document.getElementById('build-unit');
+
   addUnitButton.addEventListener('click', e => {
-    console.log(e);
     setTimeout(() => createUnit(scene, "testing123"), 1000);
   });
 

@@ -11,6 +11,13 @@ const meshesColliderList = [];
 
 const buildings = [];
 
+const oreMines = [];
+
+const userOre = 0;
+
+const standardOreValue = 100;
+const rareOreValue = 500;
+
 // State
 const state = {
 	selected: [],
@@ -157,6 +164,35 @@ window.addEventListener('DOMContentLoaded', () => {
       materialPlane.diffuseTexture.vScale = 5.0; //Repeat 5 times on the Horizontal Axes
       materialPlane.backFaceCulling = false; //Always show the front and the back of an element
 
+			const oreMaterial = new BABYLON.StandardMaterial("orePlane", scene);
+			oreMaterial.diffuseTexture = new BABYLON.Texture("./src/textures/ore.jpg", scene);
+      oreMaterial.diffuseTexture.uScale = 1; //Repeat 5 times on the Vertical Axes
+      oreMaterial.diffuseTexture.vScale = 1; //Repeat 5 times on the Horizontal Axes
+      oreMaterial.backFaceCulling = false; //Always show the front and the back of an element
+
+			const generateOreField = () => {
+				for (i = 0; i < 50; i++) {
+					generateOre();
+				}	
+			}
+
+			const generateOre = () => {
+        const ore = BABYLON.Mesh.CreateBox("ore", 0.5, scene);
+
+				ore.type = "ore";
+
+				oreMines.push(ore);
+				
+				ore.position.y = 0;
+        ore.position.z = getRandomInt(10, 30);
+        ore.position.x = getRandomInt(10, 30);
+
+				ore.material = oreMaterial;
+        ore.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false, height: 0.1 });
+			}
+
+			generateOreField();
+
       // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
       const plane = BABYLON.Mesh.CreateGround("ground", 500, 500, 1000, scene);
       plane.type = "ground";
@@ -178,8 +214,8 @@ window.addEventListener('DOMContentLoaded', () => {
 			// Concrete texture
 			const buildingMaterial = new BABYLON.StandardMaterial("textureBuilding", scene);
 			buildingMaterial.diffuseTexture = new BABYLON.Texture("./src/textures/concrete.jpg", scene);
-			buildingMaterial.diffuseTexture.uScale = 5.0;
-			buildingMaterial.diffuseTexture.vScale = 5.0;
+			buildingMaterial.diffuseTexture.uScale = 1;
+			buildingMaterial.diffuseTexture.vScale = 1;
 			buildingMaterial.backFaceCulling = false;
       
       /**
@@ -304,6 +340,8 @@ window.addEventListener('DOMContentLoaded', () => {
 					createUnit("radar", radar, scene, boxMat);
 				}, 10000 / power);	
 			}
+
+			document.getElementById("ore").text = userOre;
       
 			// Before scene is rendered
       scene.registerBeforeRender(() => {

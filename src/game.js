@@ -18,17 +18,22 @@ const userOre = 0;
 const standardOreValue = 100;
 const rareOreValue = 500;
 
+let buildTime = 0;
+
 // State
 const state = {
 	selected: [],
   targetPoint: BABYLON.Vector3.Zero(),
 }
 
-// Total power ouput
+// Total power ouput - minus total power consumption
 const power = (buildings.length > 0) 
-	? buildings.filter(building => building.type === "power")
+	? (buildings.filter(building => building.type === "power")
              .map(plant => plant.power)
-             .reduce((prev, plant) => prev + plant) : 0;
+             .reduce((prev, plant) => prev + plant))
+  - (buildings.filter(building => building.type !== "power")
+      .map(building => building.powerConsumption)
+      .reduce((prev, building) => prev + building)) : 0;
 
 // Buildings
 
@@ -65,6 +70,12 @@ const radar = {
 const constructionYard = {
 	size: 10,
 	powerConsumption: 0,
+}
+
+// Ore Refinery
+const refinery = {
+  size: 12, 
+  powerConsumption: 10,
 }
 
 // Units
@@ -297,49 +308,63 @@ window.addEventListener('DOMContentLoaded', () => {
       document.getElementById("buildPowerPlant").onclick = () => {
         console.log('Building power plant...');
         setTimeout(() => {
+          buildTime = 12000 / power;
           buildBuilding("power-plant", powerPlant, state.targetPoint);
-        }, 8000 / power);
+        }, buildTime);
       }
 
 			// Build large power plant button
       document.getElementById("buildLargePowerPlant").onclick = () => {
         console.log("Building large power plant...");
         setTimeout(() => {
+          buildTime = 12000 / power;
           buildBuilding("large-power-plant", largePowerPlant, state.targetPoint);
-        }, 12000 / power);
+        }, buildTime);
       }
 
 			// Build barracks 
       document.getElementById("buildBarracks").onclick = () => {
         console.log('Building barracks...');
         setTimeout(() => {
+          buildTime = 5000 / power;
           buildBuilding("barracks", barracks, state.targetPoint); 
-        }, 5000 / power);
+        }, buildTime);
       }
 			
 			document.getElementById("buildLightTank").onclick = () => {
 				setTimeout(() => {
+          buildTime = 4000 / power;
 					createUnit("light-tank", lightTank, scene, boxMat);
-				}, 4000 / power);
+				}, buildTime);
 			}
 
 			document.getElementById("buildJeep").onclick = () => {
 				setTimeout(() => {
+          buildTime = 1000 / power;
 					createUnit("jeep", jeep, scene, boxMat);
-				}, 1000 / power);
+				}, buildTime);
 			}
 
 			document.getElementById("buildWarFactory").onclick = () => {
 				setTimeout(() => {
+          buildTime = 8000 / power;
 					createUnit("war-factory", warFactory, scene, boxMat);
-				}, 8000 / power);
+				}, buildTime);
 			}
 
 			document.getElementById("buildRadar").onclick = () => {
 				setTimeout(() => {
-					createUnit("radar", radar, scene, boxMat);
-				}, 10000 / power);	
+          buildTime = 10000 / power;
+					buildUnit("radar", radar, scene, boxMat);
+				}, buildTime);	
 			}
+
+      document.getElementById("buildRefinery").onclick = () => {
+        setTimeout(() => {
+          buildTime = 5000 / power;
+          buildBuilding("refinery", refinery, state.targetPoint)
+        }, buildTime);
+      }
 
 			document.getElementById("ore").text = userOre;
       

@@ -81,30 +81,42 @@ const refinery = {
 
 // Units
 const lightTank = {
+  cost: 40,
 	size: 4,
 	attack: 50,
 	shield: 20,
 }
 
+const heavyTank = {
+  cost: 80,
+  size: 8,
+  attack: 80,
+  shield: 60,
+}
+
 const jeep = {
+  cost: 20,
 	size: 2,
 	attack: 10,
 	shield: 2,
 }
 
 const oreTruck = {
+  cost: 100,
   size: 4,
   attack: 0,
   shield: 50,
 }
 
 const grenadier = {
-	size: 1,
+	cost: 10,
+  size: 1,
 	attack: 3,
 	shield: 0.2,
 }
 
 const infantry = {
+  cost: 2,
 	size: 1,
 	attack: 0.5,
 	shield: 0.1,
@@ -254,7 +266,7 @@ window.addEventListener('DOMContentLoaded', () => {
         building.type = "building";
         building.buildingType = type;
         building.checkCollisions = true;
-        building.selected = true;
+        building.selected = false;
 				building.material = buildingMaterial;
         building.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false });
       }

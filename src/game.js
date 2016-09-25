@@ -23,6 +23,7 @@ let buildTime = 0;
 // State
 const state = {
 	selected: [],
+  selectedBuilding: null,
   targetPoint: BABYLON.Vector3.Zero(),
 }
 
@@ -89,6 +90,12 @@ const jeep = {
 	size: 2,
 	attack: 10,
 	shield: 2,
+}
+
+const oreTruck = {
+  size: 4,
+  attack: 0,
+  shield: 50,
 }
 
 const grenadier = {
@@ -236,16 +243,18 @@ window.addEventListener('DOMContentLoaded', () => {
 			 * @param {Object} type
 			 * @param {Vector} position
        */
-      const buildBuilding = (name, type, position) => {
+      const buildBuilding = (name, schema, position, type) => {
 
-        const building = BABYLON.Mesh.CreateBox(name, type.size, scene);
+        const building = BABYLON.Mesh.CreateBox(name, schema.size, scene);
 
-        building.position.y = type.size / 2;
+        building.position.y = schema.size / 2;
         building.position.z = position.z;
         building.position.x = position.x;
 
         building.type = "building";
+        building.buildingType = type;
         building.checkCollisions = true;
+        building.selected = true;
 				building.material = buildingMaterial;
         building.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 0, move: false });
       }
@@ -265,11 +274,19 @@ window.addEventListener('DOMContentLoaded', () => {
 					mesh.selected = true;
 					mesh.material = selectedMaterial;
           state.selected.unshift(mesh);
-        } else if (mesh.selected === true) {
+        } else if (mesh.type === "unit" && mesh.selected === true) {
 					mesh.selected = false;
 					mesh.material = boxMat;
 					state.selected = state.selected.filter(unit => unit.id !== mesh.id)
-				}
+				} else if (mesh.type === "building" && mesh.selected === false) {
+          mesh.selected = true;
+          mesh.material = selectedMaterial;
+          state.selectedBuilding = mesh;
+        } else if (mesh.type === "building" && mesh.selected === true) {
+          mesh.selected = false;
+          mesh.material = buildingMaterial;
+          state.selectedBuilding = false;
+        }
 
 				return false;
       }
@@ -309,7 +326,7 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('Building power plant...');
         setTimeout(() => {
           buildTime = 12000 / power;
-          buildBuilding("power-plant", powerPlant, state.targetPoint);
+          buildBuilding("power-plant", powerPlant, state.targetPoint, "powerPlant");
         }, buildTime);
       }
 
@@ -318,7 +335,7 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log("Building large power plant...");
         setTimeout(() => {
           buildTime = 12000 / power;
-          buildBuilding("large-power-plant", largePowerPlant, state.targetPoint);
+          buildBuilding("large-power-plant", largePowerPlant, state.targetPoint, "largePowerPlant");
         }, buildTime);
       }
 
@@ -327,18 +344,28 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('Building barracks...');
         setTimeout(() => {
           buildTime = 5000 / power;
-          buildBuilding("barracks", barracks, state.targetPoint); 
+          buildBuilding("barracks", barracks, state.targetPoint, "barracks"); 
         }, buildTime);
       }
 			
 			document.getElementById("buildLightTank").onclick = () => {
-				setTimeout(() => {
+        
+        if (!state.selectedBuilding || state.selectedBuilding.buildingType !== "warFactory") {
+          alert("You have not selected a war factory!");
+        }
+				
+        setTimeout(() => {
           buildTime = 4000 / power;
 					createUnit("light-tank", lightTank, scene, boxMat);
 				}, buildTime);
 			}
 
 			document.getElementById("buildJeep").onclick = () => {
+
+        if (!state.selectedBuilding || state.selectedBuilding.buildingType !== "warFactory") {
+          alert("You have not selected a war factory!");
+        }
+
 				setTimeout(() => {
           buildTime = 1000 / power;
 					createUnit("jeep", jeep, scene, boxMat);
@@ -348,7 +375,7 @@ window.addEventListener('DOMContentLoaded', () => {
 			document.getElementById("buildWarFactory").onclick = () => {
 				setTimeout(() => {
           buildTime = 8000 / power;
-					createUnit("war-factory", warFactory, scene, boxMat);
+					buildBuilding("war-factory", warFactory, state.targetPoint, "warFactory");
 				}, buildTime);
 			}
 
@@ -360,9 +387,14 @@ window.addEventListener('DOMContentLoaded', () => {
 			}
 
       document.getElementById("buildRefinery").onclick = () => {
+        
+      
+      
         setTimeout(() => {
           buildTime = 5000 / power;
-          buildBuilding("refinery", refinery, state.targetPoint)
+          buildBuilding("refinery", refinery, state.targetPoint, "refinery");
+          const startVector = new BABYLON.Vector3(state.targetPoint.x + 3, oreTruck.size / 2, state.targetPoint.z);
+          createUnit("ore-truck", oreTruck, startVector);
         }, buildTime);
       }
 

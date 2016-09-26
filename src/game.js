@@ -336,7 +336,7 @@ window.addEventListener('DOMContentLoaded', () => {
 			// On mouseup
       window.addEventListener("mouseup", function (e) {
 
-        if (e.target.id == 'renderCanvas'
+        if (e.target.id === 'renderCanvas'
           && Math.abs(clientX - e.clientX) < 10
           && Math.abs(clientY - e.clientY) < 10) {
           

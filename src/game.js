@@ -291,6 +291,14 @@ window.addEventListener('DOMContentLoaded', () => {
 					mesh.material = boxMat;
 					state.selected = state.selected.filter(unit => unit.id !== mesh.id)
 				} else if (mesh.type === "building" && mesh.selected === false) {
+          document.getElementById("selected-building").text = mesh.buildingType;
+          
+          // If a previous building is selected
+          if (state.selectedBuilding) {
+            state.selectedBuilding.selected = false;
+            state.selectedBuilding.material = buildingMaterial;
+          }
+
           mesh.selected = true;
           mesh.material = selectedMaterial;
           state.selectedBuilding = mesh;

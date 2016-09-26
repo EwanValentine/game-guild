@@ -58,7 +58,7 @@ const largePowerPlant = {
 
 // warFactory
 const warFactory = {
-	size: 8,
+	size: 16,
 	powerConsumption: 10,
 }
 
@@ -378,7 +378,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }, buildTime);
       }
 			
-			document.getElementById("buildLightTank").onclick = () => {
+			document.getElementById("buildHeavyTank").onclick = () => {
         
         if (!state.selectedBuilding || state.selectedBuilding.buildingType !== "warFactory") {
           alert("You have not selected a war factory!");
@@ -387,7 +387,7 @@ window.addEventListener('DOMContentLoaded', () => {
 				
         setTimeout(() => {
           buildTime = 4000 / power;
-					createUnit("light-tank", lightTank, scene, boxMat);
+					createUnit("heavy-tank", heavyTank, scene, boxMat);
 				}, buildTime);
 			}
 
@@ -403,6 +403,18 @@ window.addEventListener('DOMContentLoaded', () => {
 					createUnit("jeep", jeep, scene, boxMat);
 				}, buildTime);
 			}
+
+      document.getElementById("buildHeavyTank").onclick = () => {
+        if (!state.selectedBuilding || state.selectedBuilding.buildingType !== "warFactory") {
+          alert("You have not selected a war factory!");
+          return false;
+        }
+
+        setTimeout(() => {
+          buildTime = 2000 / power;
+          createUnit("large-tank", heavyTank, scene, boxMat);
+        }, buildTime);
+      }
 
 			document.getElementById("buildWarFactory").onclick = () => {
 				setTimeout(() => {

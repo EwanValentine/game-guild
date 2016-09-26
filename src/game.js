@@ -25,6 +25,7 @@ const state = {
 	selected: [],
   selectedBuilding: null,
   targetPoint: BABYLON.Vector3.Zero(),
+  toBeMoved: [],
 }
 
 // Total power ouput - minus total power consumption
@@ -289,7 +290,7 @@ window.addEventListener('DOMContentLoaded', () => {
         } else if (mesh.type === "unit" && mesh.selected === true) {
 					mesh.selected = false;
 					mesh.material = boxMat;
-					state.selected = state.selected.filter(unit => unit.id !== mesh.id)
+					state.selected = state.selected.filter(unit => unit.id !== mesh.id);
 				} else if (mesh.type === "building" && mesh.selected === false) {
           document.getElementById("selected-building").text = mesh.buildingType;
           
@@ -298,14 +299,20 @@ window.addEventListener('DOMContentLoaded', () => {
             state.selectedBuilding.selected = false;
             state.selectedBuilding.material = buildingMaterial;
           }
-
-          document.getElementsByClassName("unit-controls")[0].style.display = 'block';
+          
+          if (mesh.buildingType === "warFactory") {
+            document.getElementsByClassName("unit-controls")[0]
+                    .style.display = 'block';
+          }
 
           mesh.selected = true;
           mesh.material = selectedMaterial;
           state.selectedBuilding = mesh;
         } else if (mesh.type === "building" && mesh.selected === true) {
-          document.getElementsByClassName("unit-controls")[0].style.display = 'none';
+
+          document.getElementsByClassName("unit-controls")[0]
+                  .style.display = 'none';
+
           mesh.selected = false;
           mesh.material = buildingMaterial;
           state.selectedBuilding = false;
@@ -425,6 +432,20 @@ window.addEventListener('DOMContentLoaded', () => {
 			// Before scene is rendered
       scene.registerBeforeRender(() => {
 
+        // Other none selected units to be moved
+        if (state.toBeMoved) {
+
+          // For each unit
+          state.toBeMoved.map(unit => {
+            
+            if (!facePoint(unit, unit.toPos)) {
+
+              // Move unit to target point
+              moveUnit(unit, unit.toPos);
+            }
+          });
+        }
+
         // If target point is set
         if (state.targetPoint) {
 
@@ -452,10 +473,24 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const box = BABYLON.Mesh.CreateBox(name, type.size, scene);
         box.material = boxMat;
-        box.type = "unit";	
-        box.position.x = getRandomInt(1, 100);
-        box.position.z = getRandomInt(1, 100);
+        box.type = "unit";
+
+        // Place the unit inside the building
+        box.position.x = state.selectedBuilding.position.x; // + getRandomInt(8, 20);
+        box.position.z = state.selectedBuilding.position.z; // + getRandomInt(8, 20);
         box.position.y = type.size / 2;
+
+        // Create position just outside the building
+        const moveToPos = new BABYLON.Vector3(
+          box.position.x + getRandomInt(8, 20),
+          box.position.y,
+          box.position.z + getRandomInt(8, 20)
+        );
+
+        box.toPos = moveToPos;
+
+        state.toBeMoved.unshift(box);
+
 				box.selected = false;
         box.checkCollisions = true;
       }
@@ -551,7 +586,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 				// If distance is greater than 0.2
         if (moveVector.length() > 0.2) {
-
           moveVector = moveVector.normalize();
           moveVector = moveVector.scale(0.2);
           objectToMove.moveWithCollisions(moveVector);

@@ -299,10 +299,13 @@ window.addEventListener('DOMContentLoaded', () => {
             state.selectedBuilding.material = buildingMaterial;
           }
 
+          document.getElementsByClassName("unit-controls")[0].style.display = 'block';
+
           mesh.selected = true;
           mesh.material = selectedMaterial;
           state.selectedBuilding = mesh;
         } else if (mesh.type === "building" && mesh.selected === true) {
+          document.getElementsByClassName("unit-controls")[0].style.display = 'none';
           mesh.selected = false;
           mesh.material = buildingMaterial;
           state.selectedBuilding = false;
@@ -372,6 +375,7 @@ window.addEventListener('DOMContentLoaded', () => {
         
         if (!state.selectedBuilding || state.selectedBuilding.buildingType !== "warFactory") {
           alert("You have not selected a war factory!");
+          return false;
         }
 				
         setTimeout(() => {
@@ -384,6 +388,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         if (!state.selectedBuilding || state.selectedBuilding.buildingType !== "warFactory") {
           alert("You have not selected a war factory!");
+          return false;
         }
 
 				setTimeout(() => {
@@ -407,9 +412,6 @@ window.addEventListener('DOMContentLoaded', () => {
 			}
 
       document.getElementById("buildRefinery").onclick = () => {
-        
-      
-      
         setTimeout(() => {
           buildTime = 5000 / power;
           buildBuilding("refinery", refinery, state.targetPoint, "refinery");

@@ -411,73 +411,69 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     })
 
-      /**
-       * facePoint
-       *
-       * @param {Mesh}
-       * @param {Vector}
-       *
-       * @return {bool}
-       */
-      const facePoint = (rotatingObject, pointToRotateTo) => {
+    /**
+     * facePoint
+     *
+     * @param {Mesh}
+     * @param {Vector}
+     *
+     * @return {bool}
+     */
+    const facePoint = (rotatingObject, pointToRotateTo) => {
 
-        // a directional vector from one object to the other one
-        // Error here
-        const direction = pointToRotateTo.subtract(rotatingObject.position)
-        
-        let v1 = new BABYLON.Vector3(0,0,1)
-        let v2 = direction
-        
-        // caluculate the angel for the new direction
-        let angle = Math.acos(BABYLON.Vector3.Dot(v1, v2.normalize()))
+      // a directional vector from one object to the other one
+      // Error here
+      const direction = pointToRotateTo.subtract(rotatingObject.position)
+      
+      let v1 = new BABYLON.Vector3(0,0,1)
+      let v2 = direction
+      
+      // caluculate the angel for the new direction
+      let angle = Math.acos(BABYLON.Vector3.Dot(v1, v2.normalize()))
 
-        // decide it the angle has to be positive or negative
-        if (direction.x < 0) angle = angle * -1
-        
-        // calculate both angles in degrees
-        const angleDegrees = Math.round(angle * 180/Math.PI)
-        const playerRotationDegress = Math.round(rotatingObject.rotation.y * 180/Math.PI)
-        
-        // calculate the delta
-        let deltaDegrees = playerRotationDegress - angleDegrees
-        
-        // check what direction to turn to take the shotest turn
-        if (deltaDegrees > 180) {
-          deltaDegrees = deltaDegrees - 360
-        } else if(deltaDegrees < -180) {
-          deltaDegrees = deltaDegrees + 360
-        }
-        
-        // rotate until the difference between the object angle and the target angle is no more than 3 degrees
-        if (Math.abs(deltaDegrees) > 3) {
-
-          const rotationSpeed = Math.round(Math.abs(deltaDegrees) / 8)
-          
-          if (deltaDegrees > 0) {
-
-            rotatingObject.rotation.y -= rotationSpeed * Math.PI / 180
-            
-            if (rotatingObject.rotation.y < -Math.PI) {
-              rotatingObject.rotation.y = Math.PI
-            }
-          }
-
-          if (deltaDegrees < 0) {
-            
-            rotatingObject.rotation.y += rotationSpeed * Math.PI / 180
-            
-            if (rotatingObject.rotation.y > Math.PI) {
-              rotatingObject.rotation.y = -Math.PI
-            }
-          }
-          
-          // return true since the rotation is in progress
-          return true
-        }
-        
-        // return false since no rotation needed to be done
-        return false
+      // decide it the angle has to be positive or negative
+      if (direction.x < 0) angle = angle * -1
+      
+      // calculate both angles in degrees
+      const angleDegrees = Math.round(angle * 180/Math.PI)
+      const playerRotationDegress = Math.round(rotatingObject.rotation.y * 180/Math.PI)
+      
+      // calculate the delta
+      let deltaDegrees = playerRotationDegress - angleDegrees
+      
+      // check what direction to turn to take the shotest turn
+      if (deltaDegrees > 180) {
+        deltaDegrees = deltaDegrees - 360
+      } else if(deltaDegrees < -180) {
+        deltaDegrees = deltaDegrees + 360
       }
+      
+      // rotate until the difference between the object angle and the target angle is no more than 3 degrees
+      if (Math.abs(deltaDegrees) > 3) {
+
+        const rotationSpeed = Math.round(Math.abs(deltaDegrees) / 8)
+        
+        if (deltaDegrees > 0) {
+          rotatingObject.rotation.y -= rotationSpeed * Math.PI / 180
+          if (rotatingObject.rotation.y < -Math.PI) {
+            rotatingObject.rotation.y = Math.PI
+          }
+        }
+
+        if (deltaDegrees < 0) {
+          rotatingObject.rotation.y += rotationSpeed * Math.PI / 180
+          if (rotatingObject.rotation.y > Math.PI) {
+            rotatingObject.rotation.y = -Math.PI
+          }
+        }
+        
+        // return true since the rotation is in progress
+        return true
+      }
+      
+      // return false since no rotation needed to be done
+      return false
+    }
 
       /**
        * moveUnit

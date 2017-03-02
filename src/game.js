@@ -148,11 +148,13 @@ const createUnit = (name, type, scene, boxMat) => {
   const box = BABYLON.Mesh.CreateBox(name, type.size, scene)
   box.material = boxMat
   box.type = "unit"
+  box.position.x = getRandomInt(1, 100)
+  box.position.z = getRandomInt(1, 100)
 
   // Place the unit inside the building
-  box.position.x = state.selectedBuilding.position.x; // + getRandomInt(8, 20);
-  box.position.z = state.selectedBuilding.position.z; // + getRandomInt(8, 20);
-  box.position.y = type.size / 2;
+  // box.position.x = state.selectedBuilding.position.x; // + getRandomInt(8, 20);
+  // box.position.z = state.selectedBuilding.position.z; // + getRandomInt(8, 20);
+  // box.position.y = type.size / 2;
 
   // Create position just outside the building
   const moveToPos = new BABYLON.Vector3(
@@ -163,7 +165,7 @@ const createUnit = (name, type, scene, boxMat) => {
 
   box.toPos = moveToPos;
 
-  state.toBeMoved.unshift(box);
+  // state.toBeMoved.unshift(box);
 
   box.selected = false;
   box.checkCollisions = true;
@@ -382,7 +384,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Other none selected units to be moved
       // What's the difference between this and the block below?
-      // Like what's the difference between `toBeMoved` and `selected`?
+      /*
       if (state.toBeMoved.length > 0) {
 
         // For each unit
@@ -395,6 +397,7 @@ window.addEventListener('DOMContentLoaded', () => {
           }
         })
       }
+      */
 
       // If target point is set
       if (state.targetPoint) {

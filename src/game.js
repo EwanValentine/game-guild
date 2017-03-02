@@ -428,7 +428,7 @@ window.addEventListener('DOMContentLoaded', () => {
       // Error here
       const direction = pointToRotateTo.subtract(rotatingObject.position)
       
-      let v1 = new BABYLON.Vector3(0,0,1)
+      let v1 = new BABYLON.Vector3(0, 0, 1)
       let v2 = direction
       
       // caluculate the angel for the new direction
@@ -491,7 +491,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 				// Create move vector
         let moveVector = pointToMoveTo.subtract(objectToMove.position)
-        
+
 				// Set marker point to picked position
         marker.position.x = Math.round(pointToMoveTo.x / gridSize) * gridSize
         marker.position.y = Math.round(pointToMoveTo.y / gridSize) * gridSize
@@ -503,6 +503,13 @@ window.addEventListener('DOMContentLoaded', () => {
           moveVector = moveVector.scale(0.2)
           objectToMove.moveWithCollisions(moveVector)
         }       
+
+        // Destination reached
+        if (moveVector.length() < 0.19) {
+          console.log('Destination reached')
+          // Set target to null
+          state.targetPoint = null
+        }
 			}
 
       return scene

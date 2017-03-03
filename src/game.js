@@ -19,6 +19,9 @@ let clientY = 0
 
 let marker
 const gridSize = 3
+const units = []
+const types = []
+let scene
 
 const meshesColliderList = [],
   buildings = [],
@@ -176,18 +179,24 @@ const buildBuilding = (name, schema, position, type, scene) => {
 const initScene = () => {
 
   // This creates a basic Babylon Scene object (non-mesh)
-  const scene = new BABYLON.Scene(engine)
+  scene = new BABYLON.Scene(engine)
   // scene.debugLayer.show()
   scene.enablePhysics()
 
   // Foreach mesh, add physics
   scene.meshes.map(mesh => {
     if (mesh.checkCollisions && mesh.isVisible === false) {
+
       mesh.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
                                         friction: 1, restitution: 0.1 });
+
       meshesColliderList.push(mesh);
     }
   })
+
+  const largeTank = BABYLON.Mesh.CreateBox("large-tank", 8, scene)
+  largeTank.isVisible = false
+  types['large-tank'] = largeTank
 
   // This creates and positions a free camera (non-mesh)
   const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 120, 100), scene)
@@ -214,6 +223,10 @@ const initScene = () => {
   skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0)
   skyboxMaterial.disableLighting = true
   skybox.material = skyboxMaterial
+
+  BABYLON.SceneLoader.ImportMesh("", "https://dl.dropboxusercontent.com/u/17799537/tree/", "tree.babylon", scene, newMeshes => {
+        createSPS(1000)
+  })
 
   return scene
 }
@@ -247,9 +260,6 @@ const getRandomInt = (min, max) => {
  * @return {bool}
  */
 const facePoint = (rotatingObject, pointToRotateTo) => {
-
-  console.log(rotatingObject)
-  console.log(pointToRotateTo)
 
   // a directional vector from one object to the other one
   // Error here
@@ -364,27 +374,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     marker = BABYLON.MeshBuilder.CreateSphere('marker', { size: gridSize, height: 1 }, scene)
 
-    // Before scene is rendered
-    scene.registerBeforeRender(() => {
-
-      // Other none selected units to be moved
-      // What's the difference between this and the block below?
-      /*
-      if (state.toBeMoved.length > 0) {
-
-        // For each unit
-        state.toBeMoved.map(unit => {
-          
-          if (!facePoint(unit, unit.toPos)) {
-
-            // Move unit to target point
-            moveUnit(unit, unit.toPos)
-          }
-        })
-      }
-      */
-    })
-
     return scene
   }
   
@@ -392,6 +381,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Start game
   engine.runRenderLoop(() => {
+
+    state.toBeMoved.map(box => {
+      if (box.targetPoint && !facePoint(box, box.targetPoint)) {
+        moveUnit(box, box.targetPoint)
+      }
+    })
 
     // Foreach selected unit
     state.selected.map(box => {

@@ -24,12 +24,13 @@ const moveUnit = (objectToMove, pointToMoveTo) => {
     moveVector = moveVector.normalize()
     moveVector = moveVector.scale(0.2)
     objectToMove.moveWithCollisions(moveVector)
-  }       
+  }
 
   // Destination reached
-  if (moveVector.length() < 0.19) {
+  if (moveVector.length() < 0.199999) {
 
     console.log('Destination reached')
+
     // Set target to null
     objectToMove.targetPoint = null
   }
@@ -95,16 +96,11 @@ const selectUnit = (mesh, scene) => {
  */
 const createUnit = (name, type, scene, boxMat) => { 
 
-  const box = BABYLON.Mesh.CreateBox(name, type.size, scene)
+  const box = types[name].clone(name)
+
+  box.isVisible = true
   box.material = boxMat
   box.type = "unit"
-  box.position.x = getRandomInt(1, 100)
-  box.position.z = getRandomInt(1, 100)
-
-  // Place the unit inside the building
-  // box.position.x = state.selectedBuilding.position.x; // + getRandomInt(8, 20);
-  // box.position.z = state.selectedBuilding.position.z; // + getRandomInt(8, 20);
-  // box.position.y = type.size / 2;
 
   // Create position just outside the building
   const moveToPos = new BABYLON.Vector3(
@@ -114,9 +110,11 @@ const createUnit = (name, type, scene, boxMat) => {
   );
 
   box.toPos = moveToPos;
+  box.targetPoint = moveToPos
+  box.selected = false
+  box.checkCollisions = true
 
-  // state.toBeMoved.unshift(box);
+  units.push(box)
 
-  box.selected = false;
-  box.checkCollisions = true;
+  state.toBeMoved.push(box)
 }

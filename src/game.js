@@ -17,6 +17,9 @@ const engine = new BABYLON.Engine(canvas, true);
 let clientX = 0
 let clientY = 0
 
+let marker
+const gridSize = 3
+
 const meshesColliderList = [],
   buildings = [],
   oreMines = [],
@@ -135,42 +138,6 @@ const generateBoxMaterial = scene => {
   return boxMat   
 }
 
-/**
- * createUnit
- *
- * @param {String}   name
- * @param {Object}   type
- * @param {Scene}    scene
- * @param {Material} material
- */
-const createUnit = (name, type, scene, boxMat) => { 
-
-  const box = BABYLON.Mesh.CreateBox(name, type.size, scene)
-  box.material = boxMat
-  box.type = "unit"
-  box.position.x = getRandomInt(1, 100)
-  box.position.z = getRandomInt(1, 100)
-
-  // Place the unit inside the building
-  // box.position.x = state.selectedBuilding.position.x; // + getRandomInt(8, 20);
-  // box.position.z = state.selectedBuilding.position.z; // + getRandomInt(8, 20);
-  // box.position.y = type.size / 2;
-
-  // Create position just outside the building
-  const moveToPos = new BABYLON.Vector3(
-    box.position.x + getRandomInt(8, 20),
-    box.position.y,
-    box.position.z + getRandomInt(8, 20)
-  );
-
-  box.toPos = moveToPos;
-
-  // state.toBeMoved.unshift(box);
-
-  box.selected = false;
-  box.checkCollisions = true;
-}
-
 const generateBuildingMaterial = scene => {
 
   // Concrete texture
@@ -210,7 +177,17 @@ const initScene = () => {
 
   // This creates a basic Babylon Scene object (non-mesh)
   const scene = new BABYLON.Scene(engine)
+  // scene.debugLayer.show()
   scene.enablePhysics()
+
+  // Foreach mesh, add physics
+  scene.meshes.map(mesh => {
+    if (mesh.checkCollisions && mesh.isVisible === false) {
+      mesh.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
+                                        friction: 1, restitution: 0.1 });
+      meshesColliderList.push(mesh);
+    }
+  })
 
   // This creates and positions a free camera (non-mesh)
   const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 120, 100), scene)
@@ -238,7 +215,7 @@ const initScene = () => {
   skyboxMaterial.disableLighting = true
   skybox.material = skyboxMaterial
 
-  return scene;
+  return scene
 }
 
 const generateSelectedMaterial = scene => {
@@ -262,57 +239,75 @@ const getRandomInt = (min, max) => {
 }
 
 /**
- * selectUnit
+ * facePoint
  *
- * @param {Mesh} mesh
+ * @param {Mesh}
+ * @param {Vector}
+ *
+ * @return {bool}
  */
-const selectUnit = (mesh, scene) => { 
+const facePoint = (rotatingObject, pointToRotateTo) => {
 
-  const boxMat           = generateBoxMaterial(scene)
-  const buildingMaterial = generateBuildingMaterial(scene) 
-  const selectedMaterial = generateSelectedMaterial(scene)
+  console.log(rotatingObject)
+  console.log(pointToRotateTo)
+
+  // a directional vector from one object to the other one
+  // Error here
+  const direction = pointToRotateTo.subtract(rotatingObject.position)
   
-  // If mesh type is unit, and mesh is not already selected
-  if (mesh.type === "unit" && mesh.selected === false) {
-    mesh.selected = true;
-    mesh.material = selectedMaterial;
-    state.selected.unshift(mesh);
-  } else if (mesh.type === "unit" && mesh.selected === true) {
-    mesh.selected = false;
-    mesh.material = boxMat;
-    state.selected = state.selected.filter(unit => unit.id !== mesh.id);
-  } else if (mesh.type === "building" && mesh.selected === false) {
-    document.getElementById("selected-building").text = mesh.buildingType;
-    
-    // If a previous building is selected
-    if (state.selectedBuilding) {
-      state.selectedBuilding.selected = false;
-      state.selectedBuilding.material = buildingMaterial
-    }
-    
-    if (mesh.buildingType === "warFactory") {
-      document.getElementsByClassName("unit-controls")[0]
-              .style.display = 'block';
-    }
+  let v1 = new BABYLON.Vector3(0, 0, 1)
+  let v2 = direction
+  
+  // caluculate the angel for the new direction
+  let angle = Math.acos(BABYLON.Vector3.Dot(v1, v2.normalize()))
 
-    mesh.selected = true;
-    mesh.material = selectedMaterial;
-    state.selectedBuilding = mesh;
-  } else if (mesh.type === "building" && mesh.selected === true) {
-
-    document.getElementsByClassName("unit-controls")[0]
-            .style.display = 'none';
-
-    mesh.selected = false;
-    mesh.material = buildingMaterial;
-    state.selectedBuilding = false;
+  // decide it the angle has to be positive or negative
+  if (direction.x < 0) angle = angle * -1
+  
+  // calculate both angles in degrees
+  const angleDegrees = Math.round(angle * 180/Math.PI)
+  const playerRotationDegress = Math.round(rotatingObject.rotation.y * 180/Math.PI)
+  
+  // calculate the delta
+  let deltaDegrees = playerRotationDegress - angleDegrees
+  
+  // check what direction to turn to take the shotest turn
+  if (deltaDegrees > 180) {
+    deltaDegrees = deltaDegrees - 360
+  } else if(deltaDegrees < -180) {
+    deltaDegrees = deltaDegrees + 360
   }
+  
+  // rotate until the difference between the object angle and the target angle is no more than 3 degrees
+  if (Math.abs(deltaDegrees) > 3) {
 
-  return false;
+    const rotationSpeed = Math.round(Math.abs(deltaDegrees) / 8)
+    
+    if (deltaDegrees > 0) {
+      rotatingObject.rotation.y -= rotationSpeed * Math.PI / 180
+      if (rotatingObject.rotation.y < -Math.PI) {
+        rotatingObject.rotation.y = Math.PI
+      }
+    }
+
+    if (deltaDegrees < 0) {
+      rotatingObject.rotation.y += rotationSpeed * Math.PI / 180
+      if (rotatingObject.rotation.y > Math.PI) {
+        rotatingObject.rotation.y = -Math.PI
+      }
+    }
+    
+    // return true since the rotation is in progress
+    return true
+  }
+  
+  // return false since no rotation needed to be done
+  return false
 }
 
 // On DOM load
 window.addEventListener('DOMContentLoaded', () => {
+
   const createScene = () => {
 
 	  const scene = initScene()
@@ -367,17 +362,7 @@ window.addEventListener('DOMContentLoaded', () => {
       move: false,
     })
 
-    const gridSize = 3
-    const marker = BABYLON.MeshBuilder.CreateSphere('marker', { size: gridSize, height: 1 }, scene)
-
-    // Foreach mesh, add physics
-    scene.meshes.map(mesh => {
-      if (mesh.checkCollisions && mesh.isVisible === false) {
-        mesh.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
-                                          friction: 1, restitution: 0.1 });
-        meshesColliderList.push(mesh);
-      }
-    })
+    marker = BABYLON.MeshBuilder.CreateSphere('marker', { size: gridSize, height: 1 }, scene)
 
     // Before scene is rendered
     scene.registerBeforeRender(() => {
@@ -398,128 +383,33 @@ window.addEventListener('DOMContentLoaded', () => {
         })
       }
       */
-
-      // If target point is set
-      if (state.targetPoint) {
-
-        // Foreach selected unit
-        state.selected.map(box => {
-
-          if (!facePoint(box, state.targetPoint)) {
-
-            // Move unit to target point
-            moveUnit(box, state.targetPoint)
-          }
-        })
-      }
     })
 
-    /**
-     * facePoint
-     *
-     * @param {Mesh}
-     * @param {Vector}
-     *
-     * @return {bool}
-     */
-    const facePoint = (rotatingObject, pointToRotateTo) => {
-
-      // a directional vector from one object to the other one
-      // Error here
-      const direction = pointToRotateTo.subtract(rotatingObject.position)
-      
-      let v1 = new BABYLON.Vector3(0, 0, 1)
-      let v2 = direction
-      
-      // caluculate the angel for the new direction
-      let angle = Math.acos(BABYLON.Vector3.Dot(v1, v2.normalize()))
-
-      // decide it the angle has to be positive or negative
-      if (direction.x < 0) angle = angle * -1
-      
-      // calculate both angles in degrees
-      const angleDegrees = Math.round(angle * 180/Math.PI)
-      const playerRotationDegress = Math.round(rotatingObject.rotation.y * 180/Math.PI)
-      
-      // calculate the delta
-      let deltaDegrees = playerRotationDegress - angleDegrees
-      
-      // check what direction to turn to take the shotest turn
-      if (deltaDegrees > 180) {
-        deltaDegrees = deltaDegrees - 360
-      } else if(deltaDegrees < -180) {
-        deltaDegrees = deltaDegrees + 360
-      }
-      
-      // rotate until the difference between the object angle and the target angle is no more than 3 degrees
-      if (Math.abs(deltaDegrees) > 3) {
-
-        const rotationSpeed = Math.round(Math.abs(deltaDegrees) / 8)
-        
-        if (deltaDegrees > 0) {
-          rotatingObject.rotation.y -= rotationSpeed * Math.PI / 180
-          if (rotatingObject.rotation.y < -Math.PI) {
-            rotatingObject.rotation.y = Math.PI
-          }
-        }
-
-        if (deltaDegrees < 0) {
-          rotatingObject.rotation.y += rotationSpeed * Math.PI / 180
-          if (rotatingObject.rotation.y > Math.PI) {
-            rotatingObject.rotation.y = -Math.PI
-          }
-        }
-        
-        // return true since the rotation is in progress
-        return true
-      }
-      
-      // return false since no rotation needed to be done
-      return false
-    }
-
-      /**
-       * moveUnit
-       *
-       * @param {Mesh}   objectToMove
-       * @param {Vector} pointToMoveTo
-       */
-      const moveUnit = (objectToMove, pointToMoveTo) => {
-
-        // Should be on the floor
-        pointToMoveTo.y = 3
-
-				// Create move vector
-        let moveVector = pointToMoveTo.subtract(objectToMove.position)
-
-				// Set marker point to picked position
-        marker.position.x = Math.round(pointToMoveTo.x / gridSize) * gridSize
-        marker.position.y = Math.round(pointToMoveTo.y / gridSize) * gridSize
-        marker.position.z = Math.round(pointToMoveTo.z / gridSize) * gridSize
-
-				// If distance is greater than 0.2
-        if (moveVector.length() > 0.2) {
-          moveVector = moveVector.normalize()
-          moveVector = moveVector.scale(0.2)
-          objectToMove.moveWithCollisions(moveVector)
-        }       
-
-        // Destination reached
-        if (moveVector.length() < 0.19) {
-          console.log('Destination reached')
-          // Set target to null
-          state.targetPoint = null
-        }
-			}
-
-      return scene
+    return scene
   }
   
   const scene = createScene()
 
   // Start game
-  engine.runRenderLoop(() => scene.render())
+  engine.runRenderLoop(() => {
+
+    // If target point is set
+    if (state.targetPoint) {
+
+      // Foreach selected unit
+      state.selected.map(box => {
+
+        if (!facePoint(box, state.targetPoint)) {
+
+          // Move unit to target point
+          moveUnit(box, state.targetPoint)
+        }
+      })
+    }
+
+    scene.render()
+  })
 
   // Resize automatically
   window.addEventListener('resize', () => engine.resize())
-});
+})

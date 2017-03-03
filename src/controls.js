@@ -21,7 +21,10 @@ const registerHandlers = scene => {
 
       // If valid pickpoint
       if (pickResult.pickedPoint) {
-        state.targetPoint = pickResult.pickedPoint
+        const target = pickResult.pickedPoint
+        state.selected.map(selected => {
+          selected.targetPoint = target
+        })
         selectUnit(pickResult.pickedMesh, scene)
       }	
     }

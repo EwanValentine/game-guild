@@ -9,6 +9,8 @@ const moveUnit = (objectToMove, pointToMoveTo) => {
   // Should be on the floor
   pointToMoveTo.y = 3
 
+  if (!pointToMoveTo) return
+
   // Create move vector
   let moveVector = pointToMoveTo.subtract(objectToMove.position)
 
@@ -26,9 +28,10 @@ const moveUnit = (objectToMove, pointToMoveTo) => {
 
   // Destination reached
   if (moveVector.length() < 0.19) {
+
     console.log('Destination reached')
     // Set target to null
-    state.targetPoint = null
+    objectToMove.targetPoint = null
   }
 }
 

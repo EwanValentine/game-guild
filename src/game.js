@@ -393,20 +393,16 @@ window.addEventListener('DOMContentLoaded', () => {
   // Start game
   engine.runRenderLoop(() => {
 
-    // If target point is set
-    if (state.targetPoint) {
+    // Foreach selected unit
+    state.selected.map(box => {
 
-      // Foreach selected unit
-      state.selected.map(box => {
+      if (box.targetPoint && 
+        !facePoint(box, box.targetPoint)) {
 
-        if (!facePoint(box, state.targetPoint)) {
-
-          // Move unit to target point
-          moveUnit(box, state.targetPoint)
-        }
-      })
-    }
-
+        // Move unit to target point
+        moveUnit(box, box.targetPoint)
+      }
+    })
     scene.render()
   })
 

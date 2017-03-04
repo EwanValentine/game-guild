@@ -104,9 +104,9 @@ const createUnit = (name, type, scene, boxMat) => {
 
   // Create position just outside the building
   const moveToPos = new BABYLON.Vector3(
-    box.position.x + getRandomInt(8, 20),
+    box.position.x + getRandomInt(10, 25),
     box.position.y,
-    box.position.z + getRandomInt(8, 20)
+    box.position.z + getRandomInt(10, 25)
   );
 
   box.toPos = moveToPos;

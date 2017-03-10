@@ -19,6 +19,9 @@ let clientY = 0
 
 let marker
 const gridSize = 3
+const units = []
+const types = []
+let scene
 
 const meshesColliderList = [],
   buildings = [],
@@ -67,7 +70,7 @@ const largePowerPlant = {
 
 // warFactory
 const warFactory = {
-	size: 16,
+	size: 10,
 	powerConsumption: 10,
 }
 
@@ -176,18 +179,33 @@ const buildBuilding = (name, schema, position, type, scene) => {
 const initScene = () => {
 
   // This creates a basic Babylon Scene object (non-mesh)
-  const scene = new BABYLON.Scene(engine)
+  scene = new BABYLON.Scene(engine)
   // scene.debugLayer.show()
   scene.enablePhysics()
+  scene.gravity = new BABYLON.Vector3(0, -9.81, 0)
+  scene.collisionsEnabled = true
 
-  // Foreach mesh, add physics
-  scene.meshes.map(mesh => {
-    if (mesh.checkCollisions && mesh.isVisible === false) {
-      mesh.setPhysicsState(BABYLON.PhysicsEngine.BoxImpostor, { mass: 1, 
-                                        friction: 1, restitution: 0.1 });
-      meshesColliderList.push(mesh);
-    }
-  })
+  const loader = new BABYLON.AssetsManager(scene)
+
+  /*
+  BABYLON.SceneLoader.ImportMesh("", "assets/ship/", "ship.obj", scene, function (newMeshes, particleSystems) {
+    console.log(newMeshes)
+    const ship = newMeshes[0];
+
+    ship.isVisible = true;
+    ship.shadows.getShadowMap().renderList.push(ground);
+    ship.position = new BABYLON.Vector3(x, 0.75, z);
+    ship.receiveShadows = true;
+    ship.scaling = new BABYLON.Vector3(2,1,1);
+  })*/
+
+  const largeTank = BABYLON.Mesh.CreateBox("large-tank", 4, scene)
+  largeTank.isVisible = false
+  largeTank.applyGravity = true
+  largeTank.checkCollisions = true
+  largeTank.ellipsoid = new BABYLON.Vector3(4, 4, 4)
+  largeTank.ellipsoidOffset = new BABYLON.Vector3(0, 4, 0)
+  types['large-tank'] = largeTank
 
   // This creates and positions a free camera (non-mesh)
   const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 120, 100), scene)
@@ -197,6 +215,8 @@ const initScene = () => {
 
   // This attaches the camera to the canvas
   camera.attachControl(canvas, true)
+  camera.checkCollisions = true
+  camera.applyGravity = true
 
   // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
   const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene)
@@ -214,6 +234,28 @@ const initScene = () => {
   skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0)
   skyboxMaterial.disableLighting = true
   skybox.material = skyboxMaterial
+
+
+  // Grass material
+  const materialPlane = new BABYLON.StandardMaterial("texturePlane", scene)
+  materialPlane.diffuseTexture = new BABYLON.Texture("./src/textures/sand.jpg", scene)
+  materialPlane.diffuseTexture.uScale = 5.0 //Repeat 5 times on the Vertical Axes
+  materialPlane.diffuseTexture.vScale = 5.0 //Repeat 5 times on the Horizontal Axes
+  materialPlane.backFaceCulling = false //Always show the front and the back of an element
+
+  // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
+  const plane = BABYLON.Mesh.CreateGround("ground", 500, 500, 1000, scene)
+  plane.type = "ground"
+  plane.material = materialPlane
+  plane.setPhysicsState({ 
+    impostor: BABYLON.PhysicsEngine.BoxImpostor, 
+    mass: 0, 
+    friction: 1, 
+    restitution: 0.7, 
+    move: false,
+  })
+
+  marker = BABYLON.MeshBuilder.CreateSphere('marker', { size: gridSize, height: 1 }, scene)
 
   return scene
 }
@@ -247,9 +289,6 @@ const getRandomInt = (min, max) => {
  * @return {bool}
  */
 const facePoint = (rotatingObject, pointToRotateTo) => {
-
-  console.log(rotatingObject)
-  console.log(pointToRotateTo)
 
   // a directional vector from one object to the other one
   // Error here
@@ -314,13 +353,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     registerHandlers(scene)
 
-    // Grass material
-    const materialPlane = new BABYLON.StandardMaterial("texturePlane", scene)
-    materialPlane.diffuseTexture = new BABYLON.Texture("./src/textures/sand.jpg", scene)
-    materialPlane.diffuseTexture.uScale = 5.0 //Repeat 5 times on the Vertical Axes
-    materialPlane.diffuseTexture.vScale = 5.0 //Repeat 5 times on the Horizontal Axes
-    materialPlane.backFaceCulling = false //Always show the front and the back of an element
-
     const oreMaterial = new BABYLON.StandardMaterial("orePlane", scene)
     oreMaterial.diffuseTexture = new BABYLON.Texture("./src/textures/ore.jpg", scene)
     oreMaterial.diffuseTexture.uScale = 1 //Repeat 5 times on the Vertical Axes
@@ -349,42 +381,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // generateOreField();
-
-    // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
-    const plane = BABYLON.Mesh.CreateGround("ground", 500, 500, 1000, scene)
-    plane.type = "ground"
-    plane.material = materialPlane
-    plane.setPhysicsState({ 
-      impostor: BABYLON.PhysicsEngine.BoxImpostor, 
-      mass: 0, 
-      friction: 1, 
-      restitution: 0.7, 
-      move: false,
-    })
-
-    marker = BABYLON.MeshBuilder.CreateSphere('marker', { size: gridSize, height: 1 }, scene)
-
-    // Before scene is rendered
-    scene.registerBeforeRender(() => {
-
-      // Other none selected units to be moved
-      // What's the difference between this and the block below?
-      /*
-      if (state.toBeMoved.length > 0) {
-
-        // For each unit
-        state.toBeMoved.map(unit => {
-          
-          if (!facePoint(unit, unit.toPos)) {
-
-            // Move unit to target point
-            moveUnit(unit, unit.toPos)
-          }
-        })
-      }
-      */
-    })
-
     return scene
   }
   
@@ -392,6 +388,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Start game
   engine.runRenderLoop(() => {
+
+    state.toBeMoved.map(box => {
+      if (box.targetPoint && !facePoint(box, box.targetPoint)) {
+        moveUnit(box, box.targetPoint)
+      }
+    })
 
     // Foreach selected unit
     state.selected.map(box => {

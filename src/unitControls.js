@@ -6,7 +6,10 @@
  */
 const moveUnit = (objectToMove, pointToMoveTo) => {
 
+  console.log(pointToMoveTo)
+
   // Should be on the floor
+  // @TODO - Need to base this on object size
   pointToMoveTo.y = 3
 
   if (!pointToMoveTo) return
@@ -19,12 +22,15 @@ const moveUnit = (objectToMove, pointToMoveTo) => {
   marker.position.y = Math.round(pointToMoveTo.y / gridSize) * gridSize
   marker.position.z = Math.round(pointToMoveTo.z / gridSize) * gridSize
 
-  // If distance is greater than 0.2
+  // If distance is greater than 0.2, then we still need to move
+  // our unit
   if (moveVector.length() > 0.2) {
     moveVector = moveVector.normalize()
     moveVector = moveVector.scale(0.2)
     objectToMove.moveWithCollisions(moveVector)
-  }       
+  }
+
+  console.log(moveVector.length())
 
   // Destination reached
   if (moveVector.length() < 0.19) {
@@ -40,12 +46,12 @@ const moveUnit = (objectToMove, pointToMoveTo) => {
  *
  * @param {Mesh} mesh
  */
-const selectUnit = (mesh, scene) => { 
+const selectUnit = (mesh, scene) => {
 
   const boxMat           = generateBoxMaterial(scene)
-  const buildingMaterial = generateBuildingMaterial(scene) 
+  const buildingMaterial = generateBuildingMaterial(scene)
   const selectedMaterial = generateSelectedMaterial(scene)
-  
+
   // If mesh type is unit, and mesh is not already selected
   if (mesh.type === "unit" && mesh.selected === false) {
     mesh.selected = true;
@@ -57,13 +63,13 @@ const selectUnit = (mesh, scene) => {
     state.selected = state.selected.filter(unit => unit.id !== mesh.id);
   } else if (mesh.type === "building" && mesh.selected === false) {
     document.getElementById("selected-building").text = mesh.buildingType;
-    
+
     // If a previous building is selected
     if (state.selectedBuilding) {
       state.selectedBuilding.selected = false;
       state.selectedBuilding.material = buildingMaterial
     }
-    
+
     if (mesh.buildingType === "warFactory") {
       document.getElementsByClassName("unit-controls")[0]
               .style.display = 'block';
@@ -93,7 +99,7 @@ const selectUnit = (mesh, scene) => {
  * @param {Scene}    scene
  * @param {Material} material
  */
-const createUnit = (name, type, scene, boxMat) => { 
+const createUnit = (name, type, scene, boxMat) => {
 
   const box = BABYLON.Mesh.CreateBox(name, type.size, scene)
   box.material = boxMat
